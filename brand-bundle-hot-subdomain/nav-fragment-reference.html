@@ -1,0 +1,31 @@
+<!--
+  参考：articles/*.html 顶栏结构（id 与 site-chrome.js 一致）
+  - 站点根目录页面：logo href="./index.html"，资源 ./images/...
+  - articles 子路径：logo href="../index.html"，资源 ../images/...
+  - body 需 data-site-root=".."（文章子站）或 "."（根目录），供站内锚点跳转
+-->
+<nav id="site-main-nav">
+  <div class="nav-backdrop" aria-hidden="true"></div>
+  <div class="nav-inner">
+    <a class="nav-logo" href="https://snaplinediary.cn/index.html">
+      <img src="REPLACE_LOGO_PATH/logo-68.webp" alt="" width="34" height="34" loading="eager" decoding="async">
+      <span class="nav-brand">时线日记</span>
+    </a>
+    <button type="button" class="nav-toggle" id="site-nav-toggle" aria-expanded="false" aria-label="打开菜单" onclick="siteChromeToggleNav()">☰</button>
+    <ul class="nav-links" id="site-nav-links">
+      <li><a href="https://snaplinediary.cn/index.html#features">功能</a></li>
+      <li><a href="https://snaplinediary.cn/index.html#memory">记忆曲线</a></li>
+      <li><a href="https://snaplinediary.cn/index.html#cases">使用场景</a></li>
+      <li><a href="https://snaplinediary.cn/articles/index.html">用法手记</a></li>
+      <li><a href="https://hot.snaplinediary.cn/">热点</a></li>
+      <li><a href="https://snaplinediary.cn/index.html#audience">适用人群</a></li>
+      <li><a href="https://snaplinediary.cn/index.html#pro">Pro 版本</a></li>
+      <li><a href="https://snaplinediary.cn/index.html#faq">常见问题</a></li>
+      <li><a class="nav-cta" href="https://apps.apple.com/app/%E6%97%B6%E7%BA%BF%E6%97%A5%E8%AE%B0/id6760802186" target="_blank" rel="noopener noreferrer">立即下载</a></li>
+    </ul>
+  </div>
+</nav>
+<!--
+  说明：主仓库中带 onclick="siteChromeGoTo('…')" 的版本依赖 site-chrome.js + 官网同源；
+  子域名静态站若不同源，请改用上面这种绝对 URL + 普通 href（或自建路由）。
+-->

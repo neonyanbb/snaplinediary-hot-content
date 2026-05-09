@@ -10,23 +10,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
 const CONTENT = path.join(ROOT, "content");
 const OUT = path.join(ROOT, "_site");
+const BRAND_DIR = path.join(ROOT, "brand-bundle-hot-subdomain");
+const BRAND_ASSETS_WEB = "/assets/brand";
+/** 与 nav/footer 片段中 REPLACE_LOGO_PATH 一致 */
+const LOGO_BASE = "https://snaplinediary.cn/images/sharp";
 
 const md = new MarkdownIt({ html: true, linkify: true, typographer: true });
 
-/** 与 article.css 深色主题一致；勿使用浅色纸感配色（会与 --bg 冲突） */
+/** 正文内广告槽（顶栏改为主站 nav，见 brand-bundle） */
 const HOT_CSS_ARTICLE = `
-.hot-topbar{
-  font-family:var(--font-sans),DM Sans,system-ui,sans-serif;
-  position:sticky;top:0;z-index:100;
-  min-height:52px;display:flex;align-items:center;flex-wrap:wrap;gap:.35rem .75rem;
-  padding:.65rem 48px;border-bottom:1px solid rgba(232,150,60,.1);
-  background:rgba(8,7,10,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  font-size:14px;color:var(--text3)
-}
-.hot-topbar a{color:var(--text2);text-decoration:none}
-.hot-topbar a:hover{color:var(--accent);text-decoration:none}
-.hot-topbar span{color:var(--text3)}
-@media(max-width:768px){.hot-topbar{padding:.65rem 24px}}
 .art-ad-slot{margin:2rem 0;padding:1rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 `;
 
@@ -48,6 +40,85 @@ const HOT_CSS_INDEX = `
 .hot-index li a:hover{color:var(--accent2);text-decoration:underline;text-underline-offset:3px}
 .hot-index li small{color:var(--text3);font-size:12px;font-weight:400;margin-left:.35rem}
 `;
+
+const PRIVACY_TOAST_SHELL = `
+<div id="soon-toast" class="soon-toast" role="status" aria-live="polite"></div>
+<div id="priv-pg" class="priv-pg" aria-hidden="true" style="display:none">
+  <div class="priv-box" role="dialog" aria-modal="true" aria-labelledby="priv-title-h">
+    <button type="button" class="priv-close" onclick="siteChromeClosePrivacy()" aria-label="关闭">×</button>
+    <div id="priv-body"></div>
+  </div>
+</div>`;
+
+function stripHtmlComments(html) {
+  return html.replace(/<!--[\s\S]*?-->/g, "").trim();
+}
+
+function readBrandFragment(filename) {
+  const p = path.join(BRAND_DIR, filename);
+  if (!fs.existsSync(p)) {
+    throw new Error(`[build] 缺少主站品牌包文件：${p}（请解压 00-主站参考资料/brand-bundle-hot-subdomain.zip 至 brand-bundle-hot-subdomain/）`);
+  }
+  return fs.readFileSync(p, "utf8");
+}
+
+function brandNavHtml(cfg) {
+  let html = stripHtmlComments(readBrandFragment("nav-fragment-reference.html"));
+  html = html.replace(/REPLACE_LOGO_PATH/g, LOGO_BASE);
+  html = html.replace(
+    '<a href="https://hot.snaplinediary.cn/">热点</a>',
+    `<a href="${cfg.siteOrigin}/" aria-current="page">热点</a>`,
+  );
+  return html;
+}
+
+function brandFooterHtml() {
+  return stripHtmlComments(readBrandFragment("footer-fragment-reference.html")).replace(
+    /REPLACE_LOGO_PATH/g,
+    LOGO_BASE,
+  );
+}
+
+function copyBrandAssetsToSite() {
+  const dir = path.join(OUT, "assets", "brand");
+  fs.mkdirSync(dir, { recursive: true });
+  for (const f of ["site-chrome.js", "site-chrome.css", "snapline-tokens.css"]) {
+    fs.copyFileSync(path.join(BRAND_DIR, f), path.join(dir, f));
+  }
+}
+
+/** 全页外壳：主站 nav + footer + site-chrome.js（与 brand-bundle 一致） */
+function fullPage(cfg, { title, description, canonicalUrl, mainHtml, extraCss = "" }) {
+  const desc = String(description || title).replace(/"/g, "&quot;");
+  const styleBlock = `${HOT_CSS_ARTICLE}${extraCss}`;
+  return `<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(title)}</title>
+<meta name="description" content="${desc}">
+<link rel="canonical" href="${canonicalUrl}">
+<link rel="icon" type="image/png" href="https://snaplinediary.cn/images/sharp/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="${BRAND_ASSETS_WEB}/snapline-tokens.css">
+<link rel="stylesheet" href="${cfg.cssArticle}">
+<link rel="stylesheet" href="${BRAND_ASSETS_WEB}/site-chrome.css">
+<style>${styleBlock}</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(cfg.adsenseClient)}"
+     crossorigin="anonymous"></script>
+</head>
+<body class="art-lang-zh snapline-theme" data-site-root=".">
+${brandNavHtml(cfg)}
+${mainHtml}
+${brandFooterHtml()}
+${PRIVACY_TOAST_SHELL}
+<script src="${BRAND_ASSETS_WEB}/site-chrome.js" defer></script>
+</body>
+</html>`;
+}
 
 /** 用于排序：YAML Date / ISO / YYYY-MM-DD → UTC ms，无效为 0 */
 function parseArticleDateMs(raw) {
@@ -173,37 +244,12 @@ function pageTemplate({
   crumbCategoryHref,
   cfg,
 }) {
-  const desc = (description || title).replace(/"/g, "&quot;");
   const leadBlock =
     leadText ?
       `<div class="art-lead"><p>${escapeMinimal(leadText)}</p></div>`
     : "";
 
-  return `<!DOCTYPE html>
-<html lang="zh-Hans">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escapeHtml(title)} · 热点 · 时线日记</title>
-<meta name="description" content="${desc}">
-<link rel="canonical" href="${canonicalUrl}">
-<link rel="icon" type="image/png" href="https://snaplinediary.cn/images/sharp/favicon-32.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="${cfg.cssArticle}">
-<link rel="stylesheet" href="${cfg.cssChrome}">
-<style>${HOT_CSS_ARTICLE}</style>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(cfg.adsenseClient)}"
-     crossorigin="anonymous"></script>
-</head>
-<body class="art-lang-zh">
-<header class="hot-topbar">
-  <a href="https://snaplinediary.cn/">时线日记</a>
-  · <a href="${cfg.siteOrigin}/">热点内容</a>
-  · <a href="${cfg.siteOrigin}${crumbCategoryHref}">${escapeHtml(crumbCategory)}</a>
-</header>
-<article class="art-shell w chrome-page-pad">
+  const mainHtml = `<article class="art-shell w chrome-page-pad">
   <nav class="art-crumb" aria-label="breadcrumb">
     <a href="https://snaplinediary.cn/">首页</a> · <a href="${cfg.siteOrigin}/">热点</a> · <a href="${cfg.siteOrigin}${crumbCategoryHref}">${escapeHtml(crumbCategory)}</a> · <span>正文</span>
   </nav>
@@ -213,9 +259,15 @@ function pageTemplate({
   <div class="art-prose" data-prose-lang="zh">
 ${proseHtml}
   </div>
-</article>
-</body>
-</html>`;
+</article>`;
+
+  return fullPage(cfg, {
+    title: `${title} · 热点 · 时线日记`,
+    description: description || title,
+    canonicalUrl,
+    mainHtml,
+    extraCss: "",
+  });
 }
 
 function escapeHtml(s) {
@@ -244,6 +296,7 @@ async function main() {
 
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
+  copyBrandAssetsToSite();
 
   const articles = [];
 
@@ -309,33 +362,7 @@ async function main() {
     "github-projects": "GitHub 新项目速递",
   };
 
-  const sharedHeadExtras = `
-<link rel="icon" type="image/png" href="https://snaplinediary.cn/images/sharp/favicon-32.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>${HOT_CSS_ARTICLE}${HOT_CSS_INDEX}</style>`;
-
-  let indexHtml = `<!DOCTYPE html>
-<html lang="zh-Hans">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>热点内容 · 时线日记</title>
-<meta name="description" content="热点手记 · Hermes · Claude Code · AI 工具 · GitHub 新项目 · snaplinediary.cn">
-<link rel="canonical" href="${cfg.siteOrigin}/">
-<link rel="stylesheet" href="${cfg.cssArticle}">
-<link rel="stylesheet" href="${cfg.cssChrome}">
-${sharedHeadExtras}
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(cfg.adsenseClient)}"
-     crossorigin="anonymous"></script>
-</head>
-<body class="art-lang-zh">
-<header class="hot-topbar">
-  <a href="https://snaplinediary.cn/">时线日记</a>
-  · <span>热点内容</span>
-</header>
-<article class="art-shell w chrome-page-pad hot-index">
+  let indexMain = `<article class="art-shell w chrome-page-pad hot-index">
   <nav class="art-crumb" aria-label="breadcrumb">
     <a href="https://snaplinediary.cn/">首页</a> · <span>热点</span>
   </nav>
@@ -348,24 +375,31 @@ ${sharedHeadExtras}
     const group = articles.filter((a) => a.cat === c);
     if (!group.length) continue;
     const label = catLabels[c] || c;
-    indexHtml += `    <a class="hot-cat-card" href="/${c}/"><strong>${escapeHtml(label)}</strong><small>${group.length} 篇 · 进入目录</small></a>\n`;
+    indexMain += `    <a class="hot-cat-card" href="/${c}/"><strong>${escapeHtml(label)}</strong><small>${group.length} 篇 · 进入目录</small></a>\n`;
   }
 
-  indexHtml += `  </div>
+  indexMain += `  </div>
   <p class="art-meta">全文列表</p>
 `;
 
   for (const c of catOrder) {
     const group = articlesInCategoryNewestFirst(articles, c);
     if (!group.length) continue;
-    indexHtml += `  <h2 class="art-h2">${escapeHtml(catLabels[c] || c)}</h2>\n  <ul>\n`;
+    indexMain += `  <h2 class="art-h2">${escapeHtml(catLabels[c] || c)}</h2>\n  <ul>\n`;
     for (const a of group) {
-      indexHtml += `    <li><a href="/${a.cat}/${a.slug}/">${escapeHtml(a.title)}</a> <small>${escapeHtml(a.date)}</small></li>\n`;
+      indexMain += `    <li><a href="/${a.cat}/${a.slug}/">${escapeHtml(a.title)}</a> <small>${escapeHtml(a.date)}</small></li>\n`;
     }
-    indexHtml += `  </ul>\n`;
+    indexMain += `  </ul>\n`;
   }
 
-  indexHtml += `</article></body></html>`;
+  indexMain += `</article>`;
+  const indexHtml = fullPage(cfg, {
+    title: "热点内容 · 时线日记",
+    description: "热点手记 · Hermes · Claude Code · AI 工具 · GitHub 新项目 · snaplinediary.cn",
+    canonicalUrl: `${cfg.siteOrigin}/`,
+    mainHtml: indexMain,
+    extraCss: HOT_CSS_INDEX,
+  });
   fs.writeFileSync(path.join(OUT, "index.html"), indexHtml, "utf8");
 
   for (const c of catOrder) {
@@ -373,26 +407,7 @@ ${sharedHeadExtras}
     if (!group.length) continue;
     const label = catLabels[c] || c;
     const catCanonical = `${cfg.siteOrigin}/${c}/`;
-    let catHtml = `<!DOCTYPE html>
-<html lang="zh-Hans">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escapeHtml(label)} · 热点 · 时线日记</title>
-<link rel="canonical" href="${catCanonical}">
-<link rel="stylesheet" href="${cfg.cssArticle}">
-<link rel="stylesheet" href="${cfg.cssChrome}">
-${sharedHeadExtras}
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(cfg.adsenseClient)}"
-     crossorigin="anonymous"></script>
-</head>
-<body class="art-lang-zh">
-<header class="hot-topbar">
-  <a href="https://snaplinediary.cn/">时线日记</a>
-  · <a href="${cfg.siteOrigin}/">热点内容</a>
-  · <span>${escapeHtml(label)}</span>
-</header>
-<article class="art-shell w chrome-page-pad hot-index">
+    let catMain = `<article class="art-shell w chrome-page-pad hot-index">
   <nav class="art-crumb" aria-label="breadcrumb">
     <a href="https://snaplinediary.cn/">首页</a> · <a href="${cfg.siteOrigin}/">热点</a> · <span>${escapeHtml(label)}</span>
   </nav>
@@ -401,10 +416,17 @@ ${sharedHeadExtras}
   <ul>
 `;
     for (const a of group) {
-      catHtml += `    <li><a href="/${a.cat}/${a.slug}/">${escapeHtml(a.title)}</a> <small>${escapeHtml(a.date)}</small></li>\n`;
+      catMain += `    <li><a href="/${a.cat}/${a.slug}/">${escapeHtml(a.title)}</a> <small>${escapeHtml(a.date)}</small></li>\n`;
     }
-    catHtml += `  </ul>
-</article></body></html>`;
+    catMain += `  </ul>
+</article>`;
+    const catHtml = fullPage(cfg, {
+      title: `${label} · 热点 · 时线日记`,
+      description: `${label} · 热点手记 · 时线日记`,
+      canonicalUrl: catCanonical,
+      mainHtml: catMain,
+      extraCss: HOT_CSS_INDEX,
+    });
     fs.mkdirSync(path.join(OUT, c), { recursive: true });
     fs.writeFileSync(path.join(OUT, c, "index.html"), catHtml, "utf8");
   }

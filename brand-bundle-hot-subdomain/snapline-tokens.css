@@ -1,0 +1,59 @@
+/**
+ * Snapline Diary · design tokens (canonical with index.html & articles/article.css)
+ * 子站单独引入本文件即可对齐主站配色；可与 site-chrome.css 叠加使用。
+ */
+:root {
+  --bg: #08070a;
+  --bg2: #0e0c10;
+  --surface: #141119;
+  --card: #1c1820;
+  --border: #2a2430;
+  --accent: #e8963c;
+  --accent2: #f5c26a;
+  --accent3: #c96e1e;
+  --text: #f0ebe3;
+  --text2: #afa49a;
+  --text3: #6e6560;
+  --radius: 20px;
+  --radius-sm: 12px;
+  --max-w: 1160px;
+  --font-serif: 'Cormorant Garamond', 'Noto Serif SC', Georgia, serif;
+  --font-sans: 'DM Sans', 'Noto Serif SC', sans-serif;
+}
+
+/* 常用半透明装饰（与主站 inline CSS 一致，便于 hero / 分割线） */
+:root {
+  --snapline-nav-border: rgba(232, 150, 60, 0.08);
+  --snapline-nav-border-scrolled: rgba(232, 150, 60, 0.18);
+  --snapline-backdrop: rgba(8, 7, 10, 0.88);
+  --snapline-glow: rgba(232, 150, 60, 0.08);
+  --snapline-glow-strong: rgba(232, 150, 60, 0.1);
+  --snapline-chip-border: rgba(232, 150, 60, 0.22);
+  --snapline-primary-fg-on-accent: #080500;
+}
+
+/* 与主站 articles/article.css 一致的版心与正文层基础（子站无 article.css 时保留） */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+.w {
+  width: 100%;
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 48px;
+}
+@media (max-width: 768px) {
+  .w {
+    padding: 0 24px;
+  }
+}
+body.snapline-theme {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
