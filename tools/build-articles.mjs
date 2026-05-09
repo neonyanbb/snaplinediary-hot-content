@@ -107,6 +107,33 @@ const HOT_CSS_INDEX = `
   border-bottom:none!important
 }
 .hot-index-sticky-head .hot-index-section--cats{margin-bottom:0;padding:0}
+/* 首页栏目卡：桌面默认展开；手机默认收起（由 site-chrome.js 同步 open），节省首屏 */
+.hot-index-cats-details{margin:0;padding:0;border:none}
+.hot-index-cats-summary{
+  display:none;
+  align-items:center;
+  gap:.4rem;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.04em;
+  color:var(--accent);
+  padding:.5rem 0 .25rem;
+  margin:0;
+  list-style:none;
+  font-family:var(--font-sans),DM Sans,sans-serif;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent
+}
+.hot-index-cats-summary::-webkit-details-marker{display:none}
+.hot-index-cats-panel{padding:0}
+@media(max-width:768px){
+  .hot-index-cats-summary{display:flex}
+  .hot-index-sticky-head .hot-section-label--sticky{margin-top:1.1rem;padding-top:.45rem}
+}
+@media(min-width:769px){
+  .hot-index-cats-summary{display:none!important}
+}
 .hot-index-sticky-head .hot-section-label--sticky{margin:1.75rem 0 .35rem;padding-top:.5rem;border-top:1px solid var(--border)}
 .hot-index--category .hot-index-sticky-head{padding-bottom:1rem;margin-bottom:1.35rem}
 /* hero 仅在 sticky 内：宽度由 .hot-index-sticky-head-inner 约束 */
@@ -551,6 +578,9 @@ async function main() {
     <h1 class="art-h1">热点内容</h1>
     <p class="hot-index-lead">按栏目浏览精选手记 · hot.snaplinediary.cn</p>
   </header>
+  <details class="hot-index-cats-details" open>
+  <summary class="hot-index-cats-summary">栏目卡片 · 点击展开</summary>
+  <div class="hot-index-cats-panel">
   <section class="hot-index-section hot-index-section--cats" aria-label="栏目入口">
     <div class="hot-cat-grid">
 `;
@@ -564,6 +594,8 @@ async function main() {
 
   indexMain += `    </div>
   </section>
+  </div>
+  </details>
   <p class="hot-section-label hot-section-label--sticky">全文列表</p>
   </div>
   </div>

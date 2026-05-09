@@ -165,6 +165,22 @@
     );
   }
 
+  /** 热点首页：窄屏收起栏目卡片区，避免占满首屏；宽屏保持展开 */
+  function syncHotIndexCatsCollapsible() {
+    var d = document.querySelector('details.hot-index-cats-details');
+    if (!d) return;
+    var mq = window.matchMedia('(min-width: 769px)');
+    function apply() {
+      d.open = mq.matches;
+    }
+    apply();
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', apply);
+    } else if (typeof mq.addListener === 'function') {
+      mq.addListener(apply);
+    }
+  }
+
   function initChrome() {
     document.body.classList.toggle('app-soon', !APP_STORE_LIVE);
 
@@ -193,6 +209,7 @@
       });
     }
     refreshNavToggleAria();
+    syncHotIndexCatsCollapsible();
   }
 
   window.siteChromeGoTo = goToSection;
