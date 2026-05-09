@@ -353,8 +353,12 @@ ${sharedHeadExtras}
     fs.writeFileSync(path.join(OUT, c, "index.html"), catHtml, "utf8");
   }
 
-  const adsTxt = `google.com, pub-9768487950193834, DIRECT, f08c47fec0942fa0\n`;
-  fs.writeFileSync(path.join(OUT, "ads.txt"), adsTxt, "utf8");
+  const pubId = cfg.adsenseClient.replace(/^ca-/, "").trim() || "pub-9768487950193834";
+  fs.writeFileSync(
+    path.join(OUT, "ads.txt"),
+    `google.com, ${pubId}, DIRECT, f08c47fec0942fa0\n`,
+    "utf8",
+  );
 
   console.log("[build] wrote", articles.length, "articles + index + ads.txt → _site/");
 }
