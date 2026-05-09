@@ -28,16 +28,32 @@ article.art-shell.w{padding-left:48px;padding-right:48px}
 @media(max-width:768px){article.art-shell.w{padding-left:24px;padding-right:24px}}
 /* 正文排版沿用主站 article.css（720px prose + 居中）；勿再覆盖 margin/padding，否则会变成满宽左贴「不像手记页」 */
 .art-shell > nav.art-crumb{text-align:left}
+/* 文章页：侧栏 + 主栏（正文柱仍为 var(--prose)） */
+.hot-article-page .hot-article-layout{display:grid;grid-template-columns:minmax(11rem,13.75rem) minmax(0,var(--prose));gap:1.75rem 2.25rem;justify-content:center;align-items:start;width:100%}
+.hot-article-page .hot-article-layout--no-aside{grid-template-columns:minmax(0,var(--prose))}
+.hot-article-main{min-width:0}
+.hot-article-aside{position:sticky;top:calc(68px + 1.25rem);margin:0;padding:0 1.25rem 1rem 0;border-right:1px solid var(--border)}
+.hot-article-aside-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 .75rem;font-family:var(--font-sans),DM Sans,sans-serif}
+.hot-article-aside-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.hot-article-aside-list li{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.hot-article-aside-list a{font-size:13px;font-weight:400;color:var(--text2);text-decoration:none;line-height:1.45}
+.hot-article-aside-list a:hover{color:var(--accent)}
+.hot-article-aside-date{font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.hot-article-aside-more{display:inline-block;margin-top:1rem;font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:500}
+.hot-article-aside-more:hover{text-decoration:underline}
+@media(max-width:960px){
+  .hot-article-page .hot-article-layout{grid-template-columns:1fr;gap:1.25rem}
+  .hot-article-aside{position:static;border-right:none;border-bottom:1px solid var(--border);padding:0 0 1.15rem;margin-bottom:.35rem;order:-1}
+}
 `;
 
 const HOT_CSS_INDEX = `
 .hot-index{padding-bottom:4rem}
 .hot-index-hero{padding:0 0 2rem;margin:0 0 2rem;max-width:none;border-bottom:1px solid var(--border)}
-/* hero 内不受 prose 720px 限制，与下方栏目同宽 */
-.art-shell.w.hot-index .hot-index-hero .art-crumb,.art-shell.w.hot-index .hot-index-hero .art-h1{max-width:none;margin-left:0;margin-right:0;padding-left:0;padding-right:0}
-.hot-index-hero .art-crumb{text-align:left;margin-bottom:1.35rem}
-.hot-index-hero .art-h1{text-align:left;margin-bottom:.85rem}
-.hot-index-lead{margin:0;font-size:14px;line-height:1.65;color:var(--text3);font-weight:300;letter-spacing:.03em;max-width:28rem;text-align:left}
+/* 面包屑与文章页同一垂线：主站 .art-crumb 规则（720px 柱 + margin auto） */
+.hot-index-hero .art-crumb{max-width:var(--prose);margin-left:auto;margin-right:auto;padding:0 24px;text-align:left;margin-bottom:1.35rem}
+.hot-index-hero .art-h1{max-width:var(--prose);margin-left:auto;margin-right:auto;padding:0 24px;text-align:left;margin-bottom:.85rem}
+.hot-index-lead{max-width:28rem;margin-left:auto;margin-right:auto;padding:0 24px;font-size:14px;line-height:1.65;color:var(--text3);font-weight:300;letter-spacing:.03em;text-align:left}
 .hot-index-section{max-width:min(1100px,var(--max-w));margin:0 auto;padding:0}
 .hot-index-section--cats{margin-bottom:.5rem}
 .hot-section-label{display:block;text-align:left;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 1.25rem;font-family:var(--font-sans),DM Sans,sans-serif}
@@ -275,21 +291,34 @@ function pageTemplate({
   crumbCategory,
   crumbCategoryHref,
   cfg,
+  sidebarHtml = "",
 }) {
   const leadBlock =
     leadText ?
       `<div class="art-lead"><p>${escapeMinimal(leadText)}</p></div>`
     : "";
 
-  const mainHtml = `<article class="art-shell w chrome-page-pad">
+  const layoutClass =
+    sidebarHtml.trim() ?
+      "hot-article-layout"
+    : "hot-article-layout hot-article-layout--no-aside";
+
+  const asideBlock = sidebarHtml.trim() ? `${sidebarHtml}\n  ` : "";
+
+  /* 面包屑放在网格外，与目录页同为「整栏内 prose 柱居中」，避免侧栏挤压导致路径与栏目页不对齐 */
+  const mainHtml = `<article class="art-shell w chrome-page-pad hot-article-page">
   <nav class="art-crumb" aria-label="breadcrumb">
     <a href="https://snaplinediary.cn/">首页</a> · <a href="${cfg.siteOrigin}/">热点</a> · <a href="${cfg.siteOrigin}${crumbCategoryHref}">${escapeHtml(crumbCategory)}</a> · <span>正文</span>
   </nav>
+  <div class="${layoutClass}">
+  ${asideBlock}<div class="hot-article-main">
   <h1 class="art-h1">${escapeHtml(title)}</h1>
   ${leadBlock}
   <p class="art-meta">${escapeHtml(metaLine)}</p>
   <div class="art-prose" data-prose-lang="zh">
 ${proseHtml}
+  </div>
+  </div>
   </div>
 </article>`;
 
@@ -318,6 +347,34 @@ function categoryHref(cat) {
   return `/${cat}/`;
 }
 
+/** 同类目除当前篇外最近 N 篇（已按时间新→旧） */
+function recentOthersInCategory(allRecords, current, limit = 4) {
+  return articlesInCategoryNewestFirst(allRecords, current.cat)
+    .filter((a) => a.slug !== current.slug)
+    .slice(0, limit);
+}
+
+function buildRelatedSidebarHtml(current, allRecords, cfg) {
+  const items = recentOthersInCategory(allRecords, current, 4);
+  if (!items.length) return "";
+  const lines = [
+    `<aside class="hot-article-aside" aria-label="本栏最新手记">`,
+    `  <p class="hot-article-aside-label">本栏最新</p>`,
+    `  <ul class="hot-article-aside-list">`,
+  ];
+  for (const a of items) {
+    lines.push(
+      `    <li><a href="/${a.cat}/${a.slug}/">${escapeHtml(a.title)}</a><span class="hot-article-aside-date">${escapeHtml(a.date)}</span></li>`,
+    );
+  }
+  lines.push(`  </ul>`);
+  lines.push(
+    `  <a class="hot-article-aside-more" href="${cfg.siteOrigin}${current.crumbCategoryHref}">查看全部</a>`,
+  );
+  lines.push(`</aside>`);
+  return lines.join("\n");
+}
+
 async function main() {
   const cfg = loadConfig();
   if (!cfg.articleAdSlot) {
@@ -330,15 +387,15 @@ async function main() {
   fs.mkdirSync(OUT, { recursive: true });
   copyBrandAssetsToSite();
 
-  const articles = [];
+  const articleRecords = [];
 
-  function walk(dir, baseRel = "") {
+  function walkCollect(dir, baseRel = "") {
     if (!fs.existsSync(dir)) return;
     for (const name of fs.readdirSync(dir)) {
       const full = path.join(dir, name);
       const rel = path.join(baseRel, name);
       const st = fs.statSync(full);
-      if (st.isDirectory()) walk(full, rel);
+      if (st.isDirectory()) walkCollect(full, rel);
       else if (name.endsWith(".md")) {
         const raw = fs.readFileSync(full, "utf8");
         const { data, content } = matter(raw);
@@ -356,7 +413,9 @@ async function main() {
         const crumbCat = data.category_label || cat;
         const crumbHref = categoryHref(cat);
 
-        const html = pageTemplate({
+        articleRecords.push({
+          cat,
+          slug,
           title,
           description: data.description,
           metaLine,
@@ -365,18 +424,6 @@ async function main() {
           canonicalUrl,
           crumbCategory: crumbCat,
           crumbCategoryHref: crumbHref,
-          cfg,
-        });
-
-        const outDir = path.join(OUT, cat, slug);
-        fs.mkdirSync(outDir, { recursive: true });
-        fs.writeFileSync(path.join(outDir, "index.html"), html, "utf8");
-
-        articles.push({
-          cat,
-          slug,
-          title,
-          label: crumbCat,
           date: dateDisp,
           sortMs: parseArticleDateMs(data.date),
         });
@@ -384,7 +431,35 @@ async function main() {
     }
   }
 
-  walk(CONTENT);
+  walkCollect(CONTENT);
+
+  const articles = articleRecords.map((r) => ({
+    cat: r.cat,
+    slug: r.slug,
+    title: r.title,
+    label: r.crumbCategory,
+    date: r.date,
+    sortMs: r.sortMs,
+  }));
+
+  for (const r of articleRecords) {
+    const sidebarHtml = buildRelatedSidebarHtml(r, articleRecords, cfg);
+    const html = pageTemplate({
+      title: r.title,
+      description: r.description,
+      metaLine: r.metaLine,
+      leadText: r.leadText,
+      proseHtml: r.proseHtml,
+      canonicalUrl: r.canonicalUrl,
+      crumbCategory: r.crumbCategory,
+      crumbCategoryHref: r.crumbCategoryHref,
+      cfg,
+      sidebarHtml,
+    });
+    const outDir = path.join(OUT, r.cat, r.slug);
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(path.join(outDir, "index.html"), html, "utf8");
+  }
 
   const catOrder = ["hermes", "claude-code", "ai-tools", "github-projects"];
   const catLabels = {
