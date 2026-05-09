@@ -31,6 +31,7 @@ const HOT_CSS_ARTICLE = `
 `;
 
 const HOT_CSS_INDEX = `
+.hot-index > p.art-meta{text-transform:none;letter-spacing:.04em}
 .hot-cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(12rem,1fr));gap:22px;margin:1.25rem auto 2rem;max-width:1100px}
 .hot-cat-card{
   display:block;padding:22px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
