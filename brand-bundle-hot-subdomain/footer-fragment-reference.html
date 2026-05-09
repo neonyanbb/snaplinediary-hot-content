@@ -1,6 +1,7 @@
 <!--
   参考：articles/index.html 页脚（class="site-foot" 与 site-chrome.css 对应）
   主站 index.html 使用 <footer> 无 site-foot，样式等价片段内嵌于 index；子站推荐沿用 site-foot。
+  热点子域：页脚「隐私政策」调用 siteChromeShowPrivacy()，正文由 site-chrome.js 写入 #priv-pg（无需跳转官网）。
 -->
 <footer class="site-foot">
   <div class="w">
@@ -28,7 +29,7 @@
         <ul class="fc-links">
           <li><a href="https://snaplinediary.cn/index.html#faq">常见问题</a></li>
           <li><a href="mailto:neonyanbb@foxmail.com">联系我们</a></li>
-          <li><a href="https://snaplinediary.cn/index.html">隐私政策（见官网弹窗）</a></li>
+          <li><a href="#" onclick="siteChromeShowPrivacy();return false;">隐私政策</a></li>
         </ul>
       </div>
       <div>
