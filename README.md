@@ -1,8 +1,10 @@
 # snaplinediary-hot-content
 
+> **本地路径**：本仓库即 **`05-探索区/03-发布区（github）/02-提交发布`**（Git 根目录；在此执行 `git` / `npm run build` / `git push`）。
+
 热点内容站点源码：**Markdown 编写 → Eleventy 构建为 HTML → Cloudflare Pages** 发布至 `https://hot.snaplinediary.cn`。
 
-详细步骤见探索区文档：`02-实施阶段-v1.0-20260508/100-热站实施操作手册-v1.0-20260509.md`。
+详细步骤见探索区文档：`02-实施阶段-v1.0-20260508/100-热站实施操作手册-v1.0-20260509.md`。发布纪律见：`03-发布区（github）/01-准发布区/00-准发布区工作规则.md`。
 
 ## 本地开发
 

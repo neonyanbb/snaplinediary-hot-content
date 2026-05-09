@@ -5,7 +5,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-WORKSPACE="$(cd "$HOT_ROOT/.." && pwd)"
+# 仓库位于 05-探索区/03-发布区（github）/02-提交发布：向上两级到「探索区」根
+WORKSPACE="$(cd "$HOT_ROOT/../.." && pwd)"
 
 # 若实施阶段目录更名，修改此处
 STAGE_DIR="$WORKSPACE/02-实施阶段-v1.0-20260508"
