@@ -17,7 +17,8 @@ npm run build
 
 - HTML 使用主站 **`article.css`**、**`site-chrome.css`** 外链（与 `snaplinediary.cn/articles` 一致），正文容器类名为 **`art-shell` / `art-prose`** 等。
 - **全局 AdSense 脚本**（你提供的 `adsbygoogle.js?client=…`）注入在每篇文章 **`<head>`**。
-- **正文中部展示广告**：需在 **`hot-site.config.json`** 填写 **`articleAdSlot`**（AdSense → 广告 → 按广告单元 → 新建「展示广告」→ 复制 **`data-ad-slot`** 数字串），或在 Cloudflare Pages 环境变量 **`ADSENSE_ARTICLE_SLOT`** 中设置；二者构建时 **优先读环境变量**。未设置 slot 时 **仅保留 `<head>` 脚本**，文中块不输出（避免无效占位）。
+- **文章内嵌广告**：默认 **`articleAdUnitStyle`: `in-article`**（`data-ad-layout="in-article"` + `data-ad-format="fluid"`），插入位置为 **正文前两段 `<p>` 之后**（与 AdSense 向导建议一致）；若为「展示广告」单元，请将配置改为 **`"articleAdUnitStyle": "display"`** 或环境变量 **`ADSENSE_ARTICLE_STYLE=display`**。
+- **slot**：在 **`hot-site.config.json`** 填写 **`articleAdSlot`**，或在 Cloudflare **`ADSENSE_ARTICLE_SLOT`**（优先）。未设置 slot 时仅输出 `<head>` 全局脚本。
 - **勿**在文中重复粘贴整段 `adsbygoogle.js` 外链脚本，以免重复加载。
 
 ## ads.txt

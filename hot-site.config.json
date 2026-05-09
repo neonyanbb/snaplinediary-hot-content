@@ -1,6 +1,7 @@
 {
   "adsenseClient": "ca-pub-9768487950193834",
   "articleAdSlot": "",
+  "articleAdUnitStyle": "in-article",
   "siteOrigin": "https://hot.snaplinediary.cn",
   "mainSiteCss": {
     "article": "https://snaplinediary.cn/articles/article.css",

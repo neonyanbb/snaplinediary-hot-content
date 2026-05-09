@@ -20,9 +20,15 @@ function loadConfig() {
     process.env.ADSENSE_ARTICLE_SLOT?.trim() ||
     raw.articleAdSlot?.trim() ||
     "";
+  const unitStyle = (
+    process.env.ADSENSE_ARTICLE_STYLE?.trim() ||
+    raw.articleAdUnitStyle ||
+    "in-article"
+  ).toLowerCase();
   return {
     adsenseClient: raw.adsenseClient || "ca-pub-9768487950193834",
     articleAdSlot: slot,
+    articleAdUnitStyle: unitStyle === "display" ? "display" : "in-article",
     siteOrigin: (raw.siteOrigin || "https://hot.snaplinediary.cn").replace(/\/$/, ""),
     cssArticle: raw.mainSiteCss?.article || "https://snaplinediary.cn/articles/article.css",
     cssChrome: raw.mainSiteCss?.chrome || "https://snaplinediary.cn/site-chrome.css",
@@ -47,32 +53,48 @@ function stripLeadBlockquote(markdownBody) {
   return { leadText: "", body: markdownBody.trimStart() };
 }
 
-function insertMidArticleAd(htmlFragment, cfg) {
-  const wrap = `<div id="art-md-root">${htmlFragment}</div>`;
-  const $ = cheerio.load(wrap, { decodeEntities: false });
-  const root = $("#art-md-root");
-  const children = root.children().toArray();
-  if (children.length === 0) return htmlFragment;
-
-  const mid = Math.max(1, Math.floor(children.length / 2));
-  const target = children[mid - 1];
-
-  const adHtml =
-    cfg.articleAdSlot &&
-    `<div class="art-ad-slot" aria-label="广告">
-  <ins class="adsbygoogle"
-    style="display:block"
+function buildAdSlotHtml(cfg) {
+  if (!cfg.articleAdSlot) return "";
+  const isDisplay = cfg.articleAdUnitStyle === "display";
+  const insAttrs = isDisplay ?
+      `style="display:block"
     data-ad-client="${cfg.adsenseClient}"
     data-ad-slot="${cfg.articleAdSlot}"
     data-ad-format="auto"
-    data-full-width-responsive="true"></ins>
+    data-full-width-responsive="true"`
+    : `style="display:block;text-align:center;"
+    data-ad-layout="in-article"
+    data-ad-format="fluid"
+    data-ad-client="${cfg.adsenseClient}"
+    data-ad-slot="${cfg.articleAdSlot}"`;
+  return `<div class="art-ad-slot" aria-label="广告">
+  <ins class="adsbygoogle"
+    ${insAttrs}></ins>
   <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 </div>`;
+}
 
-  if (adHtml) {
-    $(target).after(adHtml);
+/** Google 文章内嵌广告建议：前两段正文之后；若无足够段落则回退 */
+function insertArticleAd(htmlFragment, cfg) {
+  const adHtml = buildAdSlotHtml(cfg);
+  if (!adHtml) return htmlFragment;
+
+  const wrap = `<div id="art-md-root">${htmlFragment}</div>`;
+  const $ = cheerio.load(wrap, { decodeEntities: false });
+  const root = $("#art-md-root");
+  const paragraphs = root.children("p").toArray();
+
+  let target = null;
+  if (paragraphs.length >= 2) target = paragraphs[1];
+  else if (paragraphs.length === 1) target = paragraphs[0];
+  else {
+    const children = root.children().toArray();
+    if (children.length === 0) return htmlFragment;
+    const mid = Math.max(1, Math.floor(children.length / 2));
+    target = children[mid - 1];
   }
 
+  $(target).after(adHtml);
   return root.html();
 }
 
@@ -173,7 +195,7 @@ async function main() {
         const { data, content } = matter(raw);
         const { leadText, body } = stripLeadBlockquote(content);
         const htmlBody = md.render(body);
-        const proseInner = insertMidArticleAd(htmlBody, cfg);
+        const proseInner = insertArticleAd(htmlBody, cfg);
 
         const cat = data.category || path.basename(path.dirname(full));
         const slug = data.slug || path.basename(name, ".md");
@@ -223,36 +245,113 @@ async function main() {
     "github-projects": "GitHub 新项目速递",
   };
 
+  const sharedHeadExtras = `
+<link rel="icon" type="image/png" href="https://snaplinediary.cn/images/sharp/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+.hot-topbar{font-family:DM Sans,system-ui,sans-serif;padding:.75rem 1rem;border-bottom:1px solid rgba(0,0,0,.08);background:#fafafa;font-size:.9rem}
+.hot-topbar a{color:#1a3a52;text-decoration:none}.hot-topbar a:hover{text-decoration:underline}
+.hot-cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.75rem;margin:1.25rem 0 2rem}
+.hot-cat-card{display:block;padding:.85rem 1rem;border:1px solid rgba(0,0,0,.1);border-radius:.35rem;text-decoration:none;color:#1a3a52;font-family:DM Sans,system-ui,sans-serif;font-size:.95rem;background:#fff}
+.hot-cat-card:hover{border-color:#1a3a52;background:#fafafa}
+.hot-cat-card small{display:block;margin-top:.35rem;color:#666;font-size:.8rem}
+.hot-index ul{padding-left:1.2rem}.hot-index a{color:#1a3a52}
+</style>`;
+
   let indexHtml = `<!DOCTYPE html>
 <html lang="zh-Hans">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>热点内容 · 时线日记</title>
+<meta name="description" content="热点手记 · Hermes · Claude Code · AI 工具 · GitHub 新项目 · snaplinediary.cn">
+<link rel="canonical" href="${cfg.siteOrigin}/">
 <link rel="stylesheet" href="${cfg.cssArticle}">
 <link rel="stylesheet" href="${cfg.cssChrome}">
-<style>.hot-index{max-width:42rem;margin:2rem auto;padding:0 1.25rem;font-family:'Noto Serif SC',serif}.hot-index h1{font-size:1.35rem}.hot-index ul{padding-left:1.2rem}.hot-index a{color:#1a3a52}</style>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${cfg.adsenseClient}"
+${sharedHeadExtras}
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(cfg.adsenseClient)}"
      crossorigin="anonymous"></script>
 </head>
 <body class="art-lang-zh">
+<header class="hot-topbar">
+  <a href="https://snaplinediary.cn/">时线日记</a>
+  · <span>热点内容</span>
+</header>
 <article class="art-shell w chrome-page-pad hot-index">
-<h1 class="art-h1">热点内容</h1>
-<p class="art-meta">snaplinediary.cn · hot</p>
+  <nav class="art-crumb" aria-label="breadcrumb">
+    <a href="https://snaplinediary.cn/">首页</a> · <span>热点</span>
+  </nav>
+  <h1 class="art-h1">热点内容</h1>
+  <p class="art-meta">按栏目浏览 · hot.snaplinediary.cn</p>
+  <div class="hot-cat-grid" aria-label="热点分类">
 `;
 
   for (const c of catOrder) {
     const group = articles.filter((a) => a.cat === c);
     if (!group.length) continue;
-    indexHtml += `<h2>${escapeHtml(catLabels[c] || c)}</h2>\n<ul>\n`;
+    const label = catLabels[c] || c;
+    indexHtml += `    <a class="hot-cat-card" href="/${c}/"><strong>${escapeHtml(label)}</strong><small>${group.length} 篇 · 进入目录</small></a>\n`;
+  }
+
+  indexHtml += `  </div>
+  <p class="art-meta">全文列表</p>
+`;
+
+  for (const c of catOrder) {
+    const group = articles.filter((a) => a.cat === c);
+    if (!group.length) continue;
+    indexHtml += `  <h2 class="art-h2">${escapeHtml(catLabels[c] || c)}</h2>\n  <ul>\n`;
     for (const a of group) {
-      indexHtml += `<li><a href="/${a.cat}/${a.slug}/">${escapeHtml(a.title)}</a> <small>${escapeHtml(a.date)}</small></li>\n`;
+      indexHtml += `    <li><a href="/${a.cat}/${a.slug}/">${escapeHtml(a.title)}</a> <small>${escapeHtml(a.date)}</small></li>\n`;
     }
-    indexHtml += `</ul>\n`;
+    indexHtml += `  </ul>\n`;
   }
 
   indexHtml += `</article></body></html>`;
   fs.writeFileSync(path.join(OUT, "index.html"), indexHtml, "utf8");
+
+  for (const c of catOrder) {
+    const group = articles.filter((a) => a.cat === c);
+    if (!group.length) continue;
+    const label = catLabels[c] || c;
+    const catCanonical = `${cfg.siteOrigin}/${c}/`;
+    let catHtml = `<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(label)} · 热点 · 时线日记</title>
+<link rel="canonical" href="${catCanonical}">
+<link rel="stylesheet" href="${cfg.cssArticle}">
+<link rel="stylesheet" href="${cfg.cssChrome}">
+${sharedHeadExtras}
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(cfg.adsenseClient)}"
+     crossorigin="anonymous"></script>
+</head>
+<body class="art-lang-zh">
+<header class="hot-topbar">
+  <a href="https://snaplinediary.cn/">时线日记</a>
+  · <a href="${cfg.siteOrigin}/">热点内容</a>
+  · <span>${escapeHtml(label)}</span>
+</header>
+<article class="art-shell w chrome-page-pad hot-index">
+  <nav class="art-crumb" aria-label="breadcrumb">
+    <a href="https://snaplinediary.cn/">首页</a> · <a href="${cfg.siteOrigin}/">热点</a> · <span>${escapeHtml(label)}</span>
+  </nav>
+  <h1 class="art-h1">${escapeHtml(label)}</h1>
+  <p class="art-meta">共 ${group.length} 篇</p>
+  <ul>
+`;
+    for (const a of group) {
+      catHtml += `    <li><a href="/${a.cat}/${a.slug}/">${escapeHtml(a.title)}</a> <small>${escapeHtml(a.date)}</small></li>\n`;
+    }
+    catHtml += `  </ul>
+</article></body></html>`;
+    fs.mkdirSync(path.join(OUT, c), { recursive: true });
+    fs.writeFileSync(path.join(OUT, c, "index.html"), catHtml, "utf8");
+  }
 
   const adsTxt = `google.com, pub-9768487950193834, DIRECT, f08c47fec0942fa0\n`;
   fs.writeFileSync(path.join(OUT, "ads.txt"), adsTxt, "utf8");
