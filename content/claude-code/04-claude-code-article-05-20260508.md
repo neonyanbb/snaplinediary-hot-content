@@ -3,12 +3,12 @@ title: "Claude Code vs Cursor vs GitHub Copilot：2026年开发者该选谁？"
 description: "'到底该用哪个AI编程工具？'——被问最多的问题，和不纠结的答案 过去三个月，这个问题出现在技术社区的频率远超其他话题。答案不是'都好'或'看情况'，而是： 它们根本不是同一类工具，选哪个取决于要解决什么问题。 核心差异：三种工具，三个定位 | 工具 | 本质 | 适合人群 |…"
 category: claude-code
 category_label: "Claude Code"
-date: 2026-05-08
+date: 2026-03-12
 slug: 04-claude-code-article-05-20260508
 reading_minutes: 4
 ---
 
-> **热点手记** · Claude Code · hot.snaplinediary.cn · 估读约 4 分钟 · 2026-05-08
+> **热点手记** · Claude Code · hot.snaplinediary.cn · 估读约 4 分钟 · 2026-03-12
 
 ## "到底该用哪个AI编程工具？"——被问最多的问题，和不纠结的答案
 

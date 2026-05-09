@@ -3,12 +3,12 @@ title: "2026年12款AI工具深度测评：拒绝纸上谈兵，只看真实数�
 description: "开头：榜单太多，真相太少 '72款AI工具横评！''年度最佳TOP 10！'——每个月都有新的榜单出炉，但几乎没有一篇告诉读者： 在真实工作场景中，这些工具到底表现如何？ 功能列表可以抄官网，跑分数据可以跑benchmark，但一个工具是否真的能融入日常工作流，只有持续使用才能…"
 category: ai-tools
 category_label: "AI 工具测评"
-date: 2026-05-08
+date: 2026-03-26
 slug: 05-ai-tools-article-02-20260508
 reading_minutes: 5
 ---
 
-> **热点手记** · AI 工具测评 · hot.snaplinediary.cn · 估读约 5 分钟 · 2026-05-08
+> **热点手记** · AI 工具测评 · hot.snaplinediary.cn · 估读约 5 分钟 · 2026-03-26
 
 ## 开头：榜单太多，真相太少
 

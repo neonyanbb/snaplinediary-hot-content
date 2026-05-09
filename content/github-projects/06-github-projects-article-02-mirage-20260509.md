@@ -3,12 +3,12 @@ title: "Mirage：一个文件系统，统一AI Agent的所有后端"
 description: "导语 AI Agent正在成为软件开发的新范式，但一个根本性的碎片化问题始终存在：每个外部服务——S3、Google Drive、Slack、Gmail、GitHub——都有自己的SDK、认证方式和数据模型。一个需要同时操作5个服务的Agent，就得学习5套API、处理5种错误…"
 category: github-projects
 category_label: "GitHub 新项目速递"
-date: 2026-05-09
+date: 2026-04-30
 slug: 06-github-projects-article-02-mirage-20260509
 reading_minutes: 4
 ---
 
-> **热点手记** · GitHub 新项目速递 · hot.snaplinediary.cn · 估读约 4 分钟 · 2026-05-09
+> **热点手记** · GitHub 新项目速递 · hot.snaplinediary.cn · 估读约 4 分钟 · 2026-04-30
 
 ## 导语
 

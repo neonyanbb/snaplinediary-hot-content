@@ -3,12 +3,12 @@ title: "用AI助手管理个人知识库：从'收藏即遗忘'到'过目不忘'
 description: "痛点钩子 很多人收藏了3000+篇文章，书签栏已经折叠了三层，知识管理软件换了一个又一个——但真正需要某个观点时，依然想不起来在哪见过。这不是记忆力差，而是 信息沉淀系统失效 。AI助手每天产生大量洞察，但如果没有结构化的沉淀机制，这些'智能碎片'只会安静地躺在聊天记录里，永远…"
 category: hermes
 category_label: "Hermes Agent"
-date: 2026-05-08
+date: 2026-01-15
 slug: 03-hermes-article-02-20260508
 reading_minutes: 3
 ---
 
-> **热点手记** · Hermes Agent · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-05-08
+> **热点手记** · Hermes Agent · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-01-15
 
 ## 痛点钩子
 

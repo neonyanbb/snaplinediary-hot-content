@@ -3,12 +3,12 @@ title: "ds4：Redis作者出手，让MacBook跑起DeepSeek V4 Flash"
 description: "导语 大模型推理正在经历一场'本地化'转向。当云端API的调用成本、延迟和隐私顾虑同时涌现，能在个人设备上运行的推理引擎就成了开发者社区的焦点。2026年5月6日，Redis创造者Salvatore Sanfilippo（antirez）在GitHub上发布了一个名为ds4的项…"
 category: github-projects
 category_label: "GitHub 新项目速递"
-date: 2026-05-09
+date: 2026-04-23
 slug: 06-github-projects-article-01-ds4-20260509
 reading_minutes: 3
 ---
 
-> **热点手记** · GitHub 新项目速递 · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-05-09
+> **热点手记** · GitHub 新项目速递 · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-04-23
 
 ## 导语
 

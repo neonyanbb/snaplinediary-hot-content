@@ -12,8 +12,8 @@ const CONTENT = path.join(ROOT, "content");
 const OUT = path.join(ROOT, "_site");
 const BRAND_DIR = path.join(ROOT, "brand-bundle-hot-subdomain");
 const BRAND_ASSETS_WEB = "/assets/brand";
-/** 与 nav/footer 片段中 REPLACE_LOGO_PATH 一致 */
-const LOGO_BASE = "https://snaplinediary.cn/images/sharp";
+/** 与 nav/footer 片段 REPLACE_LOGO_PATH/logo-68.webp 对应，产物见 copyBrandAssetsToSite */
+const LOGO_BASE = BRAND_ASSETS_WEB;
 
 const md = new MarkdownIt({ html: true, linkify: true, typographer: true });
 
@@ -82,8 +82,12 @@ function brandFooterHtml() {
 function copyBrandAssetsToSite() {
   const dir = path.join(OUT, "assets", "brand");
   fs.mkdirSync(dir, { recursive: true });
-  for (const f of ["site-chrome.js", "site-chrome.css", "snapline-tokens.css"]) {
-    fs.copyFileSync(path.join(BRAND_DIR, f), path.join(dir, f));
+  for (const f of ["site-chrome.js", "site-chrome.css", "snapline-tokens.css", "logo-68.webp"]) {
+    const src = path.join(BRAND_DIR, f);
+    if (!fs.existsSync(src)) {
+      throw new Error(`[build] 缺少品牌资源：${src}（可将 00-主站参考资料/logo-68.webp 拷入 brand-bundle-hot-subdomain/）`);
+    }
+    fs.copyFileSync(src, path.join(dir, f));
   }
 }
 

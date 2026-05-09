@@ -3,12 +3,12 @@ title: "Claude Code Plan Mode：代码质量提升3倍的秘密"
 description: "改一处崩一片——老项目重构的噩梦循环 重构一个老项目的认证模块，把Session改成JWT。听起来一天搞定，结果三天后另一个模块崩了—— 被改掉的那个函数，在17个地方被调用 。 这不是偶然。没有全局视野的重构，本质上就是'盲人摸象'。传统流程的致命伤在于：看到烂代码→改几行→…"
 category: claude-code
 category_label: "Claude Code"
-date: 2026-05-08
+date: 2026-02-19
 slug: 04-claude-code-article-02-20260508
 reading_minutes: 3
 ---
 
-> **热点手记** · Claude Code · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-05-08
+> **热点手记** · Claude Code · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-02-19
 
 ## 改一处崩一片——老项目重构的噩梦循环
 

@@ -3,12 +3,12 @@ title: "Hermes Agent的隐藏技能：这5个用法90%的人不知道"
 description: "痛点钩子 大多数人用Hermes Agent的方式，和用普通聊天机器人没有区别——问一个问题，得到一个答案，关掉对话。但社区里有一批深度用户，他们用Hermes做的事情看起来像是完全不同的工具： 自动生成周报、管理5个并行项目的上下文、把通勤语音变成可执行的行动项 。差距不在于…"
 category: hermes
 category_label: "Hermes Agent"
-date: 2026-05-08
+date: 2026-02-05
 slug: 03-hermes-article-05-20260508
 reading_minutes: 4
 ---
 
-> **热点手记** · Hermes Agent · hot.snaplinediary.cn · 估读约 4 分钟 · 2026-05-08
+> **热点手记** · Hermes Agent · hot.snaplinediary.cn · 估读约 4 分钟 · 2026-02-05
 
 ## 痛点钩子
 

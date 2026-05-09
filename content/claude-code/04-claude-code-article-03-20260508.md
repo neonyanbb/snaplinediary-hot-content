@@ -3,12 +3,12 @@ title: "实测所有AI编程工具后，为什么最终只留了Claude Code？"
 description: "半年试了6款AI编程工具，钱花了，时间没了，到底哪个能用？ 有开发者过去半年试了所有主流AI编程工具：GitHub Copilot、Cursor、Replit Ghostwriter、Tabnine、Continue.dev、Windsurf……每个月订阅费加起来超过$100，…"
 category: claude-code
 category_label: "Claude Code"
-date: 2026-05-08
+date: 2026-02-26
 slug: 04-claude-code-article-03-20260508
 reading_minutes: 3
 ---
 
-> **热点手记** · Claude Code · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-05-08
+> **热点手记** · Claude Code · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-02-26
 
 ## 半年试了6款AI编程工具，钱花了，时间没了，到底哪个能用？
 

@@ -3,12 +3,12 @@ title: "CodeBurn：让AI编程的每一分钱都花得明白"
 description: "导语 当AI编程工具从'尝鲜'变成'日常'，一个被长期忽视的问题浮出水面：钱花在了哪里？一个开发者可能同时使用Claude Code、Cursor、Codex、Gemini CLI等多个工具，每个月的AI账单可能高达数百美元，但几乎没有人能说清楚——哪些任务花了多少钱、哪些to…"
 category: github-projects
 category_label: "GitHub 新项目速递"
-date: 2026-05-09
+date: 2026-05-07
 slug: 06-github-projects-article-04-codeburn-20260509
 reading_minutes: 3
 ---
 
-> **热点手记** · GitHub 新项目速递 · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-05-09
+> **热点手记** · GitHub 新项目速递 · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-05-07
 
 ## 导语
 

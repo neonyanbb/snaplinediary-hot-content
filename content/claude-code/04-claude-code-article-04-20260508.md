@@ -3,12 +3,12 @@ title: "Claude Code 2026新特性深度解析：这些更新让开发者效率�
 description: "专注时间从25分钟提升到47分钟——一个被忽视的效率黑洞 开发者每天真正高效编码的时间有多长？研究数据显示，平均只有2.5小时。不是不努力，而是 每次专注被打断后，需要23分钟才能重新进入状态 。 2026年Claude Code的一系列更新，恰恰瞄准了这个被大多数工具忽视的问…"
 category: claude-code
 category_label: "Claude Code"
-date: 2026-05-08
+date: 2026-03-05
 slug: 04-claude-code-article-04-20260508
 reading_minutes: 3
 ---
 
-> **热点手记** · Claude Code · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-05-08
+> **热点手记** · Claude Code · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-03-05
 
 ## 专注时间从25分钟提升到47分钟——一个被忽视的效率黑洞
 

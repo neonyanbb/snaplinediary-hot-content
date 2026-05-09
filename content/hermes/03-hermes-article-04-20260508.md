@@ -3,12 +3,12 @@ title: "Hermes Agent完整上手指南：从安装到实战（2026版）"
 description: "痛点钩子 新工具刚上手时总是充满希望：功能强大、设计优雅、社区活跃。但三天后，大多数人都会遇到同一个问题—— 配置复杂、平台切换混乱、记忆功能没有真正用起来 。不是工具不好，而是缺少一个清晰的操作路径：从'装上'到'真正用起来'，中间到底需要几步？ 三步上手路径：从安装到产生实…"
 category: hermes
 category_label: "Hermes Agent"
-date: 2026-05-08
+date: 2026-01-29
 slug: 03-hermes-article-04-20260508
 reading_minutes: 4
 ---
 
-> **热点手记** · Hermes Agent · hot.snaplinediary.cn · 估读约 4 分钟 · 2026-05-08
+> **热点手记** · Hermes Agent · hot.snaplinediary.cn · 估读约 4 分钟 · 2026-01-29
 
 ## 痛点钩子
 

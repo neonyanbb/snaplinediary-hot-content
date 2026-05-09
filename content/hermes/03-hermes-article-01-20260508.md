@@ -3,12 +3,12 @@ title: "Hermes Agent：一款会成长的AI助手，重新定义人机协作"
 description: "痛点钩子 很多人花三小时和AI助手讨论一个技术方案，第二天打开新对话——它完全不记得昨天聊过什么。这种'金鱼记忆'式的交互，正在消耗无数AI工具尝鲜者的耐心。更尴尬的是：每次切换平台（手机→电脑→Slack），都等于重新认识一遍。 问题不在于AI不够聪明，而在于它从不记得用户是…"
 category: hermes
 category_label: "Hermes Agent"
-date: 2026-05-08
+date: 2026-01-08
 slug: 03-hermes-article-01-20260508
 reading_minutes: 3
 ---
 
-> **热点手记** · Hermes Agent · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-05-08
+> **热点手记** · Hermes Agent · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-01-08
 
 ## 痛点钩子
 

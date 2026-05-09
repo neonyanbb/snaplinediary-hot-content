@@ -3,12 +3,12 @@ title: "Hermes Agent vs 其他AI助手：2026年终极对比评测"
 description: "痛点钩子 很多人试了十几款AI助手，每一款在第一次对话时都让人觉得'这次终于找到对的'。但两周后，它们都表现出同一个致命缺陷： 不记得用户是谁，不记得聊过什么，换平台等于换大脑 。评测文章看的越多越困惑——每个都说自己最好，但没人回答一个根本问题： 长期使用时，哪个真正'懂'用…"
 category: hermes
 category_label: "Hermes Agent"
-date: 2026-05-08
+date: 2026-01-22
 slug: 03-hermes-article-03-20260508
 reading_minutes: 4
 ---
 
-> **热点手记** · Hermes Agent · hot.snaplinediary.cn · 估读约 4 分钟 · 2026-05-08
+> **热点手记** · Hermes Agent · hot.snaplinediary.cn · 估读约 4 分钟 · 2026-01-22
 
 ## 痛点钩子
 

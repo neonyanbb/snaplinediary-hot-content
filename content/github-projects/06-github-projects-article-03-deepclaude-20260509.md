@@ -3,12 +3,12 @@ title: "DeepClaude：保留Claude Code体验，成本降到1/17"
 description: "导语 Claude Code是目前公认最强的自主编码Agent，但每月$200的订阅费用和用量上限让不少开发者望而却步。与此同时，DeepSeek V4 Pro在LiveCodeBench上取得了96.4%的成绩，输出token价格仅为$0.87/M——不到Anthropic的…"
 category: github-projects
 category_label: "GitHub 新项目速递"
-date: 2026-05-09
+date: 2026-05-05
 slug: 06-github-projects-article-03-deepclaude-20260509
 reading_minutes: 3
 ---
 
-> **热点手记** · GitHub 新项目速递 · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-05-09
+> **热点手记** · GitHub 新项目速递 · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-05-05
 
 ## 导语
 
