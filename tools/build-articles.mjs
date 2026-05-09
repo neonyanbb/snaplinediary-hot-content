@@ -27,7 +27,11 @@ const HOT_CSS_ARTICLE = `
 article.art-shell.w{padding-left:48px;padding-right:48px}
 @media(max-width:768px){article.art-shell.w{padding-left:24px;padding-right:24px}}
 /* 正文排版沿用主站 article.css（720px prose + 居中）；勿再覆盖 margin/padding，否则会变成满宽左贴「不像手记页」 */
-.art-shell > nav.art-crumb{text-align:left}
+/* 详情页路径：与热点目录 hero 同宽（1100/max-w）、左对齐 — 与分类目录页一致 */
+.hot-article-page .hot-article-crumb-wrap{max-width:min(1100px,var(--max-w));margin-left:auto;margin-right:auto}
+.hot-article-page .hot-article-crumb-wrap .art-crumb{
+  max-width:none!important;margin-left:0!important;margin-right:0!important;padding-left:0!important;padding-right:0!important;text-align:left
+}
 /* 文章页：侧栏 + 主栏（正文柱仍为 var(--prose)） */
 .hot-article-page .hot-article-layout{display:grid;grid-template-columns:minmax(11rem,13.75rem) minmax(0,var(--prose));gap:1.75rem 2.25rem;justify-content:center;align-items:start;width:100%}
 .hot-article-page .hot-article-layout--no-aside{grid-template-columns:minmax(0,var(--prose))}
@@ -49,11 +53,28 @@ article.art-shell.w{padding-left:48px;padding-right:48px}
 
 const HOT_CSS_INDEX = `
 .hot-index{padding-bottom:4rem}
-.hot-index-hero{padding:0 0 2rem;margin:0 0 2rem;max-width:none;border-bottom:1px solid var(--border)}
-/* 首页：面包屑/标题与文章页同为 prose 柱居中 */
-.hot-index-hero .art-crumb{max-width:var(--prose);margin-left:auto;margin-right:auto;padding:0 24px;text-align:left;margin-bottom:1.35rem}
-.hot-index-hero .art-h1{max-width:var(--prose);margin-left:auto;margin-right:auto;padding:0 24px;text-align:left;margin-bottom:.85rem}
-.hot-index-lead{max-width:28rem;margin-left:auto;margin-right:auto;padding:0 24px;font-size:14px;line-height:1.65;color:var(--text3);font-weight:300;letter-spacing:.03em;text-align:left}
+/* 首页与分类目录统一：hero 与下方 section 同宽，路径/标题/导语左对齐（参考分类目录页） */
+.hot-index .hot-index-hero{
+  max-width:min(1100px,var(--max-w));
+  margin-left:auto;
+  margin-right:auto;
+  margin-bottom:2rem;
+  padding:0 0 2rem;
+  border-bottom:1px solid var(--border)
+}
+.hot-index .hot-index-hero .art-crumb{margin-bottom:1.35rem}
+.hot-index .hot-index-hero .art-h1{margin-bottom:.85rem}
+.hot-index .hot-index-hero .art-crumb,
+.hot-index .hot-index-hero .art-h1,
+.hot-index .hot-index-hero .hot-index-lead{
+  max-width:none;
+  margin-left:0;
+  margin-right:0;
+  padding-left:0;
+  padding-right:0;
+  text-align:left
+}
+.hot-index .hot-index-hero .hot-index-lead{font-size:14px;line-height:1.65;color:var(--text3);font-weight:300;letter-spacing:.03em}
 .hot-index-section{max-width:min(1100px,var(--max-w));margin:0 auto;padding:0}
 .hot-index-section--cats{margin-bottom:.5rem}
 .hot-section-label{display:block;text-align:left;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 1.25rem;font-family:var(--font-sans),DM Sans,sans-serif}
@@ -81,25 +102,7 @@ const HOT_CSS_INDEX = `
 .hot-article-list a{flex:1;min-width:min(100%,14rem);color:var(--text2);text-decoration:none;font-size:15px;font-weight:300;line-height:1.55}
 .hot-article-list a:hover{color:var(--accent)}
 .hot-article-list small{flex-shrink:0;color:var(--text3);font-size:12px;font-weight:400;font-variant-numeric:tabular-nums;letter-spacing:.04em}
-/* 分类目录页：hero 与 .hot-index-section 同宽居中，内部左对齐，与列表左缘一致（不再用窄 prose 块） */
-.hot-index--category .hot-index-hero{
-  max-width:min(1100px,var(--max-w));
-  margin-left:auto;
-  margin-right:auto;
-  margin-bottom:2rem;
-  padding-bottom:1.75rem;
-  border-bottom:1px solid var(--border)
-}
-.hot-index--category .hot-index-hero .art-crumb,
-.hot-index--category .hot-index-hero .art-h1,
-.hot-index--category .hot-index-hero .hot-index-lead{
-  max-width:none;
-  margin-left:0;
-  margin-right:0;
-  padding-left:0;
-  padding-right:0;
-  text-align:left
-}
+.hot-index--category .hot-index-hero{padding-bottom:1.75rem}
 .hot-index--category .hot-index-section{padding-top:0}
 `;
 
@@ -323,11 +326,13 @@ function pageTemplate({
 
   const asideBlock = sidebarHtml.trim() ? `${sidebarHtml}\n  ` : "";
 
-  /* 面包屑放在网格外，与目录页同为「整栏内 prose 柱居中」，避免侧栏挤压导致路径与栏目页不对齐 */
+  /* 面包屑与热点目录 hero 同宽左对齐（分类目录页同款），再排侧栏+正文柱 */
   const mainHtml = `<article class="art-shell w chrome-page-pad hot-article-page">
+  <div class="hot-article-crumb-wrap">
   <nav class="art-crumb" aria-label="breadcrumb">
     <a href="https://snaplinediary.cn/">首页</a> · <a href="${cfg.siteOrigin}/">热点</a> · <a href="${cfg.siteOrigin}${crumbCategoryHref}">${escapeHtml(crumbCategory)}</a> · <span>正文</span>
   </nav>
+  </div>
   <div class="${layoutClass}">
   ${asideBlock}<div class="hot-article-main">
   <h1 class="art-h1">${escapeHtml(title)}</h1>
