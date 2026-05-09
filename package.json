@@ -1,0 +1,17 @@
+{
+  "name": "snaplinediary-hot-content",
+  "version": "1.0.0",
+  "private": true,
+  "description": "hot.snaplinediary.cn — Markdown 源稿构建为静态 HTML，部署到 Cloudflare Pages",
+  "scripts": {
+    "build": "eleventy && cp -r static/. _site/",
+    "serve": "eleventy --serve",
+    "clean": "rm -rf _site"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^2.0.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
