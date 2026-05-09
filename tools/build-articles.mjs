@@ -23,22 +23,40 @@ const HOT_CSS_ARTICLE = `
 `;
 
 const HOT_CSS_INDEX = `
-.hot-index > p.art-meta{text-transform:none;letter-spacing:.04em}
-.hot-cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(12rem,1fr));gap:22px;margin:1.25rem auto 2rem;max-width:1100px}
+.hot-index{padding-bottom:4rem}
+.hot-index-hero{text-align:center;padding:0 24px 2rem;margin:0 auto 2rem;max-width:var(--prose);border-bottom:1px solid var(--border)}
+.hot-index-hero .art-crumb{text-align:center;margin-bottom:1.35rem}
+.hot-index-hero .art-h1{margin-bottom:.85rem}
+.hot-index-lead{margin:0 auto;font-size:14px;line-height:1.65;color:var(--text3);font-weight:300;letter-spacing:.03em;max-width:28rem}
+.hot-index-section{max-width:min(1100px,var(--max-w));margin:0 auto;padding:0 24px}
+.hot-index-section--cats{margin-bottom:.5rem}
+.hot-section-label{display:block;text-align:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 1.25rem;font-family:var(--font-sans),DM Sans,sans-serif}
+.hot-cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(14.5rem,1fr));gap:18px;margin:0 auto}
 .hot-cat-card{
-  display:block;padding:22px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
-  text-decoration:none!important;color:inherit;font-family:var(--font-sans),DM Sans,system-ui,sans-serif;font-size:.95rem;
+  position:relative;display:block;overflow:hidden;padding:26px 22px 24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  text-decoration:none!important;color:inherit;font-family:var(--font-sans),DM Sans,system-ui,sans-serif;
   transition:border-color .28s ease,transform .28s ease,box-shadow .28s ease
 }
-.hot-cat-card:hover{border-color:rgba(232,150,60,.25);transform:translateY(-3px);box-shadow:0 16px 48px rgba(0,0,0,.35)}
-.hot-cat-card strong{display:block;color:var(--text);font-weight:600;font-family:var(--font-serif),serif;margin-bottom:.35rem}
-.hot-cat-card small{display:block;color:var(--text3);font-size:12px;line-height:1.45}
-.hot-index .art-h2{font-family:var(--font-serif);font-size:1.45rem;font-weight:500;color:var(--text);margin:2rem 0 .75rem}
-.hot-index ul{margin:.5em 0 1.25em;padding-left:1.25rem;color:var(--text2);font-size:15px;font-weight:300}
-.hot-index li{margin:.4em 0}
-.hot-index li a{color:var(--accent);text-decoration:none}
-.hot-index li a:hover{color:var(--accent2);text-decoration:underline;text-underline-offset:3px}
-.hot-index li small{color:var(--text3);font-size:12px;font-weight:400;margin-left:.35rem}
+.hot-cat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent3),var(--accent2));transform:scaleX(0);transform-origin:left;transition:transform .3s ease}
+.hot-cat-card:hover{border-color:rgba(232,150,60,.28);transform:translateY(-4px);box-shadow:0 20px 56px rgba(0,0,0,.32)}
+.hot-cat-card:hover::after{transform:scaleX(1)}
+.hot-cat-card strong{display:block;font-family:var(--font-serif),serif;font-size:1.12rem;font-weight:600;color:var(--text);line-height:1.35;margin-bottom:.5rem}
+.hot-cat-card small{display:block;color:var(--text3);font-size:12.5px;line-height:1.5;font-weight:400}
+.hot-index-block{margin-top:2.75rem;padding-top:2.25rem;border-top:1px solid var(--border)}
+.hot-index-block:first-of-type{margin-top:2rem;padding-top:0;border-top:none}
+.hot-index .art-h2.hot-index-cat-title{font-family:var(--font-serif);font-size:1.35rem;font-weight:500;color:var(--text);margin:0 0 1rem;letter-spacing:-.02em}
+.hot-article-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.hot-article-list li{
+  display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:.6rem 1.25rem;
+  padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+  transition:border-color .22s ease,box-shadow .22s ease
+}
+.hot-article-list li:hover{border-color:rgba(232,150,60,.22);box-shadow:0 10px 36px rgba(0,0,0,.22)}
+.hot-article-list a{flex:1;min-width:min(100%,14rem);color:var(--text2);text-decoration:none;font-size:15px;font-weight:300;line-height:1.55}
+.hot-article-list a:hover{color:var(--accent)}
+.hot-article-list small{flex-shrink:0;color:var(--text3);font-size:12px;font-weight:400;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.hot-index--category .hot-index-hero{border-bottom:1px solid var(--border);margin-bottom:2rem;padding-bottom:1.75rem}
+.hot-index--category .hot-index-section{padding-top:0}
 `;
 
 const PRIVACY_TOAST_SHELL = `
@@ -367,36 +385,47 @@ async function main() {
   };
 
   let indexMain = `<article class="art-shell w chrome-page-pad hot-index">
-  <nav class="art-crumb" aria-label="breadcrumb">
-    <a href="https://snaplinediary.cn/">首页</a> · <span>热点</span>
-  </nav>
-  <h1 class="art-h1">热点内容</h1>
-  <p class="art-meta">按栏目浏览 · hot.snaplinediary.cn</p>
-  <div class="hot-cat-grid" aria-label="热点分类">
+  <header class="hot-index-hero">
+    <nav class="art-crumb" aria-label="breadcrumb">
+      <a href="https://snaplinediary.cn/">首页</a> · <span>热点</span>
+    </nav>
+    <h1 class="art-h1">热点内容</h1>
+    <p class="hot-index-lead">按栏目浏览精选手记 · hot.snaplinediary.cn</p>
+  </header>
+  <section class="hot-index-section hot-index-section--cats" aria-label="栏目入口">
+    <div class="hot-cat-grid">
 `;
 
   for (const c of catOrder) {
     const group = articles.filter((a) => a.cat === c);
     if (!group.length) continue;
     const label = catLabels[c] || c;
-    indexMain += `    <a class="hot-cat-card" href="/${c}/"><strong>${escapeHtml(label)}</strong><small>${group.length} 篇 · 进入目录</small></a>\n`;
+    indexMain += `      <a class="hot-cat-card" href="/${c}/"><strong>${escapeHtml(label)}</strong><small>${group.length} 篇 · 进入目录</small></a>\n`;
   }
 
-  indexMain += `  </div>
-  <p class="art-meta">全文列表</p>
+  indexMain += `    </div>
+  </section>
+  <section class="hot-index-section" aria-label="全部文章">
+    <span class="hot-section-label">全文列表</span>
 `;
 
   for (const c of catOrder) {
     const group = articlesInCategoryNewestFirst(articles, c);
     if (!group.length) continue;
-    indexMain += `  <h2 class="art-h2">${escapeHtml(catLabels[c] || c)}</h2>\n  <ul>\n`;
+    indexMain += `    <div class="hot-index-block">
+      <h2 class="art-h2 hot-index-cat-title">${escapeHtml(catLabels[c] || c)}</h2>
+      <ul class="hot-article-list">
+`;
     for (const a of group) {
-      indexMain += `    <li><a href="/${a.cat}/${a.slug}/">${escapeHtml(a.title)}</a> <small>${escapeHtml(a.date)}</small></li>\n`;
+      indexMain += `        <li><a href="/${a.cat}/${a.slug}/">${escapeHtml(a.title)}</a><small>${escapeHtml(a.date)}</small></li>\n`;
     }
-    indexMain += `  </ul>\n`;
+    indexMain += `      </ul>
+    </div>
+`;
   }
 
-  indexMain += `</article>`;
+  indexMain += `  </section>
+</article>`;
   const indexHtml = fullPage(cfg, {
     title: "热点内容 · 时线日记",
     description: "热点手记 · Hermes · Claude Code · AI 工具 · GitHub 新项目 · snaplinediary.cn",
@@ -411,18 +440,22 @@ async function main() {
     if (!group.length) continue;
     const label = catLabels[c] || c;
     const catCanonical = `${cfg.siteOrigin}/${c}/`;
-    let catMain = `<article class="art-shell w chrome-page-pad hot-index">
-  <nav class="art-crumb" aria-label="breadcrumb">
-    <a href="https://snaplinediary.cn/">首页</a> · <a href="${cfg.siteOrigin}/">热点</a> · <span>${escapeHtml(label)}</span>
-  </nav>
-  <h1 class="art-h1">${escapeHtml(label)}</h1>
-  <p class="art-meta">共 ${group.length} 篇</p>
-  <ul>
+    let catMain = `<article class="art-shell w chrome-page-pad hot-index hot-index--category">
+  <header class="hot-index-hero">
+    <nav class="art-crumb" aria-label="breadcrumb">
+      <a href="https://snaplinediary.cn/">首页</a> · <a href="${cfg.siteOrigin}/">热点</a> · <span>${escapeHtml(label)}</span>
+    </nav>
+    <h1 class="art-h1">${escapeHtml(label)}</h1>
+    <p class="hot-index-lead">共 ${group.length} 篇手记</p>
+  </header>
+  <section class="hot-index-section">
+    <ul class="hot-article-list">
 `;
     for (const a of group) {
-      catMain += `    <li><a href="/${a.cat}/${a.slug}/">${escapeHtml(a.title)}</a> <small>${escapeHtml(a.date)}</small></li>\n`;
+      catMain += `      <li><a href="/${a.cat}/${a.slug}/">${escapeHtml(a.title)}</a><small>${escapeHtml(a.date)}</small></li>\n`;
     }
-    catMain += `  </ul>
+    catMain += `    </ul>
+  </section>
 </article>`;
     const catHtml = fullPage(cfg, {
       title: `${label} · 热点 · 时线日记`,
