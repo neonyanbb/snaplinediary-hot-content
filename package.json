@@ -1,10 +1,16 @@
 {
   "name": "snaplinediary-hot-content",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
-  "description": "hot.snaplinediary.cn — 当前为最小静态测试页（Cloudflare Pages）",
+  "type": "module",
+  "description": "hot.snaplinediary.cn — Markdown → HTML（主站样式外链），Cloudflare Pages",
   "scripts": {
-    "build": "mkdir -p _site && cp -r public/. _site/",
-    "serve": "npx --yes serve public -p 8080"
+    "build": "node tools/build-articles.mjs",
+    "serve": "npx --yes serve _site -p 8080"
+  },
+  "dependencies": {
+    "cheerio": "1.0.0-rc.12",
+    "gray-matter": "^4.0.3",
+    "markdown-it": "^14.1.0"
   }
 }

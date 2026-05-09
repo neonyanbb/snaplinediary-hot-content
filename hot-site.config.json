@@ -1,0 +1,9 @@
+{
+  "adsenseClient": "ca-pub-9768487950193834",
+  "articleAdSlot": "",
+  "siteOrigin": "https://hot.snaplinediary.cn",
+  "mainSiteCss": {
+    "article": "https://snaplinediary.cn/articles/article.css",
+    "chrome": "https://snaplinediary.cn/site-chrome.css"
+  }
+}
