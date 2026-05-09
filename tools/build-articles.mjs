@@ -97,7 +97,7 @@ const HOT_CSS_INDEX = `
   border-bottom:none!important
 }
 .hot-index-sticky-head .hot-index-section--cats{margin-bottom:0;padding:0}
-.hot-index-sticky-head .hot-section-label--sticky{margin:0 0 .15rem}
+.hot-index-sticky-head .hot-section-label--sticky{margin:1.75rem 0 .35rem;padding-top:.5rem;border-top:1px solid var(--border)}
 .hot-index--category .hot-index-sticky-head{padding-bottom:1rem;margin-bottom:1.35rem}
 /* hero 仅在 sticky 内：宽度由 .hot-index-sticky-head-inner 约束 */
 .hot-index .hot-index-hero .art-crumb{margin-bottom:.65rem}
