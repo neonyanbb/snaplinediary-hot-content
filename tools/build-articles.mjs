@@ -13,6 +13,54 @@ const OUT = path.join(ROOT, "_site");
 
 const md = new MarkdownIt({ html: true, linkify: true, typographer: true });
 
+/** 与 article.css 深色主题一致；勿使用浅色纸感配色（会与 --bg 冲突） */
+const HOT_CSS_ARTICLE = `
+.hot-topbar{
+  font-family:var(--font-sans),DM Sans,system-ui,sans-serif;
+  position:sticky;top:0;z-index:100;
+  min-height:52px;display:flex;align-items:center;flex-wrap:wrap;gap:.35rem .75rem;
+  padding:.65rem 48px;border-bottom:1px solid rgba(232,150,60,.1);
+  background:rgba(8,7,10,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  font-size:14px;color:var(--text3)
+}
+.hot-topbar a{color:var(--text2);text-decoration:none}
+.hot-topbar a:hover{color:var(--accent);text-decoration:none}
+.hot-topbar span{color:var(--text3)}
+@media(max-width:768px){.hot-topbar{padding:.65rem 24px}}
+.art-ad-slot{margin:2rem 0;padding:1rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+`;
+
+const HOT_CSS_INDEX = `
+.hot-cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(12rem,1fr));gap:22px;margin:1.25rem auto 2rem;max-width:1100px}
+.hot-cat-card{
+  display:block;padding:22px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+  text-decoration:none!important;color:inherit;font-family:var(--font-sans),DM Sans,system-ui,sans-serif;font-size:.95rem;
+  transition:border-color .28s ease,transform .28s ease,box-shadow .28s ease
+}
+.hot-cat-card:hover{border-color:rgba(232,150,60,.25);transform:translateY(-3px);box-shadow:0 16px 48px rgba(0,0,0,.35)}
+.hot-cat-card strong{display:block;color:var(--text);font-weight:600;font-family:var(--font-serif),serif;margin-bottom:.35rem}
+.hot-cat-card small{display:block;color:var(--text3);font-size:12px;line-height:1.45}
+.hot-index .art-h2{font-family:var(--font-serif);font-size:1.45rem;font-weight:500;color:var(--text);margin:2rem 0 .75rem}
+.hot-index ul{margin:.5em 0 1.25em;padding-left:1.25rem;color:var(--text2);font-size:15px;font-weight:300}
+.hot-index li{margin:.4em 0}
+.hot-index li a{color:var(--accent);text-decoration:none}
+.hot-index li a:hover{color:var(--accent2);text-decoration:underline;text-underline-offset:3px}
+.hot-index li small{color:var(--text3);font-size:12px;font-weight:400;margin-left:.35rem}
+`;
+
+function formatArticleDate(raw) {
+  if (raw == null || raw === "") return "";
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+    const y = raw.getUTCFullYear();
+    const m = String(raw.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(raw.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  const s = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  return s;
+}
+
 function loadConfig() {
   const p = path.join(ROOT, "hot-site.config.json");
   const raw = JSON.parse(fs.readFileSync(p, "utf8"));
@@ -129,7 +177,7 @@ function pageTemplate({
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="${cfg.cssArticle}">
 <link rel="stylesheet" href="${cfg.cssChrome}">
-<style>.hot-topbar{font-family:DM Sans,system-ui,sans-serif;padding:.75rem 1rem;border-bottom:1px solid rgba(0,0,0,.08);background:#fafafa;font-size:.9rem}.hot-topbar a{color:#1a3a52;text-decoration:none}.hot-topbar a:hover{text-decoration:underline}.art-ad-slot{margin:2rem 0;padding:1rem 0;border-top:1px dashed rgba(0,0,0,.12);border-bottom:1px dashed rgba(0,0,0,.12)}</style>
+<style>${HOT_CSS_ARTICLE}</style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(cfg.adsenseClient)}"
      crossorigin="anonymous"></script>
 </head>
@@ -200,7 +248,8 @@ async function main() {
         const cat = data.category || path.basename(path.dirname(full));
         const slug = data.slug || path.basename(name, ".md");
         const title = data.title || slug;
-        const metaLine = `${data.category_label || cat} · 估读约 ${data.reading_minutes || "?"} 分钟 · ${data.date || ""}`;
+        const dateDisp = formatArticleDate(data.date);
+        const metaLine = `${data.category_label || cat} · 估读约 ${data.reading_minutes || "?"} 分钟 · ${dateDisp}`;
         const canonicalUrl = `${cfg.siteOrigin}/${cat}/${slug}/`;
 
         const crumbCat = data.category_label || cat;
@@ -227,7 +276,7 @@ async function main() {
           slug,
           title,
           label: crumbCat,
-          date: data.date || "",
+          date: dateDisp,
         });
       }
     }
@@ -250,15 +299,7 @@ async function main() {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-.hot-topbar{font-family:DM Sans,system-ui,sans-serif;padding:.75rem 1rem;border-bottom:1px solid rgba(0,0,0,.08);background:#fafafa;font-size:.9rem}
-.hot-topbar a{color:#1a3a52;text-decoration:none}.hot-topbar a:hover{text-decoration:underline}
-.hot-cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.75rem;margin:1.25rem 0 2rem}
-.hot-cat-card{display:block;padding:.85rem 1rem;border:1px solid rgba(0,0,0,.1);border-radius:.35rem;text-decoration:none;color:#1a3a52;font-family:DM Sans,system-ui,sans-serif;font-size:.95rem;background:#fff}
-.hot-cat-card:hover{border-color:#1a3a52;background:#fafafa}
-.hot-cat-card small{display:block;margin-top:.35rem;color:#666;font-size:.8rem}
-.hot-index ul{padding-left:1.2rem}.hot-index a{color:#1a3a52}
-</style>`;
+<style>${HOT_CSS_ARTICLE}${HOT_CSS_INDEX}</style>`;
 
   let indexHtml = `<!DOCTYPE html>
 <html lang="zh-Hans">
