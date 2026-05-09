@@ -27,13 +27,19 @@ const HOT_CSS_ARTICLE = `
 article.art-shell.w{padding-left:48px;padding-right:48px}
 @media(max-width:768px){article.art-shell.w{padding-left:24px;padding-right:24px}}
 /* 正文排版沿用主站 article.css（720px prose + 居中）；勿再覆盖 margin/padding，否则会变成满宽左贴「不像手记页」 */
-/* 详情页路径：与热点目录 hero 同宽（1100/max-w）、左对齐 — 与分类目录页一致 */
-.hot-article-page .hot-article-crumb-wrap{max-width:min(1100px,var(--max-w));margin-left:auto;margin-right:auto}
+/* 详情页：路径 + 侧栏 + 正文共用与目录页相同的 1100 版心；网格勿再单独居中，否则会与路径左缘错位「看不出改过」 */
+.hot-article-page .hot-article-band{
+  max-width:min(1100px,var(--max-w));
+  margin-left:auto;
+  margin-right:auto;
+  width:100%
+}
+.hot-article-page .hot-article-crumb-wrap{margin:0}
 .hot-article-page .hot-article-crumb-wrap .art-crumb{
   max-width:none!important;margin-left:0!important;margin-right:0!important;padding-left:0!important;padding-right:0!important;text-align:left
 }
 /* 文章页：侧栏 + 主栏（正文柱仍为 var(--prose)） */
-.hot-article-page .hot-article-layout{display:grid;grid-template-columns:minmax(11rem,13.75rem) minmax(0,var(--prose));gap:1.75rem 2.25rem;justify-content:center;align-items:start;width:100%}
+.hot-article-page .hot-article-layout{display:grid;grid-template-columns:minmax(11rem,13.75rem) minmax(0,var(--prose));gap:1.75rem 2.25rem;justify-content:start;align-items:start;width:100%}
 .hot-article-page .hot-article-layout--no-aside{grid-template-columns:minmax(0,var(--prose))}
 .hot-article-main{min-width:0}
 .hot-article-aside{position:sticky;top:calc(68px + 1.25rem);margin:0;padding:0 1.25rem 1rem 0;border-right:1px solid var(--border)}
@@ -67,12 +73,12 @@ const HOT_CSS_INDEX = `
 .hot-index .hot-index-hero .art-crumb,
 .hot-index .hot-index-hero .art-h1,
 .hot-index .hot-index-hero .hot-index-lead{
-  max-width:none;
-  margin-left:0;
-  margin-right:0;
-  padding-left:0;
-  padding-right:0;
-  text-align:left
+  max-width:none!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  padding-left:0!important;
+  padding-right:0!important;
+  text-align:left!important
 }
 .hot-index .hot-index-hero .hot-index-lead{font-size:14px;line-height:1.65;color:var(--text3);font-weight:300;letter-spacing:.03em}
 .hot-index-section{max-width:min(1100px,var(--max-w));margin:0 auto;padding:0}
@@ -326,8 +332,9 @@ function pageTemplate({
 
   const asideBlock = sidebarHtml.trim() ? `${sidebarHtml}\n  ` : "";
 
-  /* 面包屑与热点目录 hero 同宽左对齐（分类目录页同款），再排侧栏+正文柱 */
+  /* 路径与侧栏+正文同一 1100 版心，与热点目录页对齐 */
   const mainHtml = `<article class="art-shell w chrome-page-pad hot-article-page">
+  <div class="hot-article-band">
   <div class="hot-article-crumb-wrap">
   <nav class="art-crumb" aria-label="breadcrumb">
     <a href="https://snaplinediary.cn/">首页</a> · <a href="${cfg.siteOrigin}/">热点</a> · <a href="${cfg.siteOrigin}${crumbCategoryHref}">${escapeHtml(crumbCategory)}</a> · <span>正文</span>
@@ -340,6 +347,7 @@ function pageTemplate({
   <p class="art-meta">${escapeHtml(metaLine)}</p>
   <div class="art-prose" data-prose-lang="zh">
 ${proseHtml}
+  </div>
   </div>
   </div>
   </div>
