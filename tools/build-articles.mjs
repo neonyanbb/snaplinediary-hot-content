@@ -20,14 +20,15 @@ const md = new MarkdownIt({ html: true, linkify: true, typographer: true });
 /** 正文内广告槽（顶栏改为主站 nav，见 brand-bundle） */
 const HOT_CSS_ARTICLE = `
 .art-ad-slot{margin:2rem 0;padding:1rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.art-shell > nav.art-crumb{text-align:left}
 `;
 
 const HOT_CSS_INDEX = `
 .hot-index{padding-bottom:4rem}
-.hot-index-hero{text-align:center;padding:0 24px 2rem;margin:0 auto 2rem;max-width:var(--prose);border-bottom:1px solid var(--border)}
-.hot-index-hero .art-crumb{text-align:center;margin-bottom:1.35rem}
-.hot-index-hero .art-h1{margin-bottom:.85rem}
-.hot-index-lead{margin:0 auto;font-size:14px;line-height:1.65;color:var(--text3);font-weight:300;letter-spacing:.03em;max-width:28rem}
+.hot-index-hero{padding:0 24px 2rem;margin:0 auto 2rem;max-width:var(--prose);border-bottom:1px solid var(--border)}
+.hot-index-hero .art-crumb{text-align:left;margin-bottom:1.35rem}
+.hot-index-hero .art-h1{text-align:center;margin-bottom:.85rem}
+.hot-index-lead{margin:0 auto;font-size:14px;line-height:1.65;color:var(--text3);font-weight:300;letter-spacing:.03em;max-width:28rem;text-align:center}
 .hot-index-section{max-width:min(1100px,var(--max-w));margin:0 auto;padding:0 24px}
 .hot-index-section--cats{margin-bottom:.5rem}
 .hot-section-label{display:block;text-align:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 1.25rem;font-family:var(--font-sans),DM Sans,sans-serif}
