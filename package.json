@@ -5,8 +5,7 @@
   "type": "module",
   "description": "hot.snaplinediary.cn — Markdown → HTML（主站样式外链），Cloudflare Pages",
   "scripts": {
-    "build": "node tools/build-articles.mjs",
-    "serve": "npx --yes serve _site -p 8080"
+    "build": "node tools/build-articles.mjs"
   },
   "dependencies": {
     "cheerio": "1.0.0-rc.12",

@@ -1,4 +1,4 @@
-// Build: MD -> HTML (main-site-like layout), AdSense in head + optional mid-page unit.
+// Markdown → HTML for Cloudflare Pages (_site/).
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
