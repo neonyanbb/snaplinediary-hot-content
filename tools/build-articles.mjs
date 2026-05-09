@@ -26,9 +26,7 @@ const HOT_CSS_ARTICLE = `
  */
 article.art-shell.w{padding-left:48px;padding-right:48px}
 @media(max-width:768px){article.art-shell.w{padding-left:24px;padding-right:24px}}
-/* 阅读柱贴齐版心左缘（不再相对整页居中） */
-.art-shell.w .art-crumb,.art-shell.w .art-h1,.art-shell.w .art-meta,.art-shell.w .art-prose{margin-left:0;margin-right:auto;padding-left:0;padding-right:24px}
-.art-shell.w .art-lead{margin-left:0;margin-right:auto}
+/* 正文排版沿用主站 article.css（720px prose + 居中）；勿再覆盖 margin/padding，否则会变成满宽左贴「不像手记页」 */
 .art-shell > nav.art-crumb{text-align:left}
 `;
 
