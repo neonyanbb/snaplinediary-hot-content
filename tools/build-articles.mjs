@@ -20,7 +20,13 @@ const md = new MarkdownIt({ html: true, linkify: true, typographer: true });
 /** 正文内广告槽（顶栏改为主站 nav，见 brand-bundle） */
 const HOT_CSS_ARTICLE = `
 .art-ad-slot{margin:2rem 0;padding:1rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-/* 与顶栏 logo 同源：版心仅 .w 一道左右内边距；取消 article.css 将正文柱居中造成的二次缩进 */
+/*
+ * 根因：article.css 里 .w 先写 padding:0 48px，其后 .art-shell 又用 padding:48px 0 100px 整条简写覆盖，
+ * 左右被写成 0，版心与顶栏 .nav-inner（左右 48px）错位约一整格 gutter，面包屑看起来像「超出边界」。
+ */
+article.art-shell.w{padding-left:48px;padding-right:48px}
+@media(max-width:768px){article.art-shell.w{padding-left:24px;padding-right:24px}}
+/* 阅读柱贴齐版心左缘（不再相对整页居中） */
 .art-shell.w .art-crumb,.art-shell.w .art-h1,.art-shell.w .art-meta,.art-shell.w .art-prose{margin-left:0;margin-right:auto;padding-left:0;padding-right:24px}
 .art-shell.w .art-lead{margin-left:0;margin-right:auto}
 .art-shell > nav.art-crumb{text-align:left}
@@ -28,13 +34,12 @@ const HOT_CSS_ARTICLE = `
 
 const HOT_CSS_INDEX = `
 .hot-index{padding-bottom:4rem}
-/* hero 占满 .w 内容宽，避免 var(--prose) 居中窄栏与 logo 错位 */
 .hot-index-hero{padding:0 0 2rem;margin:0 0 2rem;max-width:none;border-bottom:1px solid var(--border)}
-/* 覆盖 HOT_CSS_ARTICLE / article.css 的 prose 柱宽，使 hero 内标题相对整栏居中、面包屑贴齐版心左缘 */
+/* hero 内不受 prose 720px 限制，与下方栏目同宽 */
 .art-shell.w.hot-index .hot-index-hero .art-crumb,.art-shell.w.hot-index .hot-index-hero .art-h1{max-width:none;margin-left:0;margin-right:0;padding-left:0;padding-right:0}
 .hot-index-hero .art-crumb{text-align:left;margin-bottom:1.35rem}
-.hot-index-hero .art-h1{text-align:center;margin-bottom:.85rem}
-.hot-index-lead{margin:0 auto;font-size:14px;line-height:1.65;color:var(--text3);font-weight:300;letter-spacing:.03em;max-width:28rem;text-align:center}
+.hot-index-hero .art-h1{text-align:left;margin-bottom:.85rem}
+.hot-index-lead{margin:0;font-size:14px;line-height:1.65;color:var(--text3);font-weight:300;letter-spacing:.03em;max-width:28rem;text-align:left}
 .hot-index-section{max-width:min(1100px,var(--max-w));margin:0 auto;padding:0}
 .hot-index-section--cats{margin-bottom:.5rem}
 .hot-section-label{display:block;text-align:left;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 1.25rem;font-family:var(--font-sans),DM Sans,sans-serif}
