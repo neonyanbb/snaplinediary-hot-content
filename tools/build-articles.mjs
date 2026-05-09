@@ -49,17 +49,32 @@ const HOT_CSS_INDEX = `
 .hot-index li small{color:var(--text3);font-size:12px;font-weight:400;margin-left:.35rem}
 `;
 
-function formatArticleDate(raw) {
-  if (raw == null || raw === "") return "";
-  if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
-    const y = raw.getUTCFullYear();
-    const m = String(raw.getUTCMonth() + 1).padStart(2, "0");
-    const d = String(raw.getUTCDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  }
+/** 用于排序：YAML Date / ISO / YYYY-MM-DD → UTC ms，无效为 0 */
+function parseArticleDateMs(raw) {
+  if (raw == null || raw === "") return 0;
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) return raw.getTime();
   const s = String(raw).trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
-  return s;
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s]|$)/.exec(s);
+  if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3]);
+  const t = Date.parse(s);
+  return Number.isNaN(t) ? 0 : t;
+}
+
+/** 列表与 meta 仅展示 YYYY-MM-DD（避免 Date 被转成 GMT 长串） */
+function formatArticleDate(raw) {
+  const ms = parseArticleDateMs(raw);
+  if (!ms) return "";
+  const d = new Date(ms);
+  const y = d.getUTCFullYear();
+  const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${mo}-${day}`;
+}
+
+function articlesInCategoryNewestFirst(all, cat) {
+  return all
+    .filter((a) => a.cat === cat)
+    .sort((a, b) => b.sortMs - a.sortMs || a.slug.localeCompare(b.slug));
 }
 
 function loadConfig() {
@@ -278,14 +293,13 @@ async function main() {
           title,
           label: crumbCat,
           date: dateDisp,
+          sortMs: parseArticleDateMs(data.date),
         });
       }
     }
   }
 
   walk(CONTENT);
-
-  articles.sort((a, b) => (a.cat + a.slug).localeCompare(b.cat + b.slug));
 
   const catOrder = ["hermes", "claude-code", "ai-tools", "github-projects"];
   const catLabels = {
@@ -342,7 +356,7 @@ ${sharedHeadExtras}
 `;
 
   for (const c of catOrder) {
-    const group = articles.filter((a) => a.cat === c);
+    const group = articlesInCategoryNewestFirst(articles, c);
     if (!group.length) continue;
     indexHtml += `  <h2 class="art-h2">${escapeHtml(catLabels[c] || c)}</h2>\n  <ul>\n`;
     for (const a of group) {
@@ -355,7 +369,7 @@ ${sharedHeadExtras}
   fs.writeFileSync(path.join(OUT, "index.html"), indexHtml, "utf8");
 
   for (const c of catOrder) {
-    const group = articles.filter((a) => a.cat === c);
+    const group = articlesInCategoryNewestFirst(articles, c);
     if (!group.length) continue;
     const label = catLabels[c] || c;
     const catCanonical = `${cfg.siteOrigin}/${c}/`;
