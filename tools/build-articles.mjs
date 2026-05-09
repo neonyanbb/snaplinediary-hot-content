@@ -50,7 +50,7 @@ article.art-shell.w{padding-left:48px;padding-right:48px}
 const HOT_CSS_INDEX = `
 .hot-index{padding-bottom:4rem}
 .hot-index-hero{padding:0 0 2rem;margin:0 0 2rem;max-width:none;border-bottom:1px solid var(--border)}
-/* 面包屑与文章页同一垂线：主站 .art-crumb 规则（720px 柱 + margin auto） */
+/* 首页：面包屑/标题与文章页同为 prose 柱居中 */
 .hot-index-hero .art-crumb{max-width:var(--prose);margin-left:auto;margin-right:auto;padding:0 24px;text-align:left;margin-bottom:1.35rem}
 .hot-index-hero .art-h1{max-width:var(--prose);margin-left:auto;margin-right:auto;padding:0 24px;text-align:left;margin-bottom:.85rem}
 .hot-index-lead{max-width:28rem;margin-left:auto;margin-right:auto;padding:0 24px;font-size:14px;line-height:1.65;color:var(--text3);font-weight:300;letter-spacing:.03em;text-align:left}
@@ -81,7 +81,25 @@ const HOT_CSS_INDEX = `
 .hot-article-list a{flex:1;min-width:min(100%,14rem);color:var(--text2);text-decoration:none;font-size:15px;font-weight:300;line-height:1.55}
 .hot-article-list a:hover{color:var(--accent)}
 .hot-article-list small{flex-shrink:0;color:var(--text3);font-size:12px;font-weight:400;font-variant-numeric:tabular-nums;letter-spacing:.04em}
-.hot-index--category .hot-index-hero{border-bottom:1px solid var(--border);margin-bottom:2rem;padding-bottom:1.75rem}
+/* 分类目录页：hero 与 .hot-index-section 同宽居中，内部左对齐，与列表左缘一致（不再用窄 prose 块） */
+.hot-index--category .hot-index-hero{
+  max-width:min(1100px,var(--max-w));
+  margin-left:auto;
+  margin-right:auto;
+  margin-bottom:2rem;
+  padding-bottom:1.75rem;
+  border-bottom:1px solid var(--border)
+}
+.hot-index--category .hot-index-hero .art-crumb,
+.hot-index--category .hot-index-hero .art-h1,
+.hot-index--category .hot-index-hero .hot-index-lead{
+  max-width:none;
+  margin-left:0;
+  margin-right:0;
+  padding-left:0;
+  padding-right:0;
+  text-align:left
+}
 .hot-index--category .hot-index-section{padding-top:0}
 `;
 
