@@ -26,36 +26,46 @@ const HOT_CSS_ARTICLE = `
  */
 article.art-shell.w{padding-left:48px;padding-right:48px}
 @media(max-width:768px){article.art-shell.w{padding-left:24px;padding-right:24px}}
-/* 顶栏 68px + chrome-page-pad 原先 88px 会在固定导航下留出「透明缝」，滚动时正文会闪过 */
+/* 与固定顶栏 68px 对齐：chrome-page-pad 原为 88px 会留透明缝；!important 压住外链 article.css / .w 对 padding 的改写 */
 article.art-shell.w.chrome-page-pad{padding-top:68px!important}
-/* 正文排版沿用主站 article.css（720px prose + 居中）；勿再覆盖 margin/padding，否则会变成满宽左贴「不像手记页」 */
-/* 详情页：路径 + 侧栏 + 正文共用与目录页相同的 1100 版心；网格勿再单独居中，否则会与路径左缘错位「看不出改过」 */
+/* 文章页整条版心实心背景：消除路径与网格之间的「透明缝」；勿在 band 顶层留 padding（否则会滚到路径上方、吸顶条盖不住） */
+article.hot-article-page.art-shell.w{background-color:var(--bg)}
 .hot-article-page .hot-article-band{
   max-width:min(1100px,var(--max-w));
   margin-left:auto;
   margin-right:auto;
-  width:100%
+  width:100%;
+  background-color:var(--bg);
+  padding-top:0!important
 }
-/* 路径条吸附在顶栏下；与正文网格无缝衔接，避免滚动时中间漏缝 */
-.hot-article-page .hot-article-band{padding-top:1.15rem}
+/* 顶栏下留白全部放进吸顶条内部，保证 sticky 从 68px 起整块同色 */
 .hot-article-page .hot-article-crumb-wrap{
   position:sticky;
   top:68px;
   z-index:120;
   margin:0!important;
-  padding:.35rem 0 .65rem;
-  background:var(--bg);
+  padding:.85rem 0 .75rem;
+  background-color:var(--bg);
   border-bottom:1px solid var(--border)
 }
 .hot-article-page .hot-article-crumb-wrap .art-crumb{
   max-width:none!important;margin-left:0!important;margin-right:0!important;margin-bottom:0!important;padding-left:0!important;padding-right:0!important;text-align:left;line-height:1.45
 }
-.hot-article-page .hot-article-layout{margin-top:0;padding-top:.75rem}
-/* 文章页：侧栏 + 主栏（正文柱仍为 var(--prose)） */
-.hot-article-page .hot-article-layout{display:grid;grid-template-columns:minmax(11rem,13.75rem) minmax(0,var(--prose));gap:1.75rem 2.25rem;justify-content:start;align-items:start;width:100%}
+/* 文章页：侧栏 + 主栏；网格顶不留透明缝 */
+.hot-article-page .hot-article-layout{
+  display:grid;
+  grid-template-columns:minmax(11rem,13.75rem) minmax(0,var(--prose));
+  gap:1.75rem 2.25rem;
+  justify-content:start;
+  align-items:start;
+  width:100%;
+  margin-top:0!important;
+  padding-top:0!important
+}
 .hot-article-page .hot-article-layout--no-aside{grid-template-columns:minmax(0,var(--prose))}
 .hot-article-main{min-width:0}
-.hot-article-aside{position:sticky;top:calc(68px + 2.75rem);margin:0;padding:0 1.25rem 1rem 0;border-right:1px solid var(--border)}
+.hot-article-page .hot-article-main{padding-top:.35rem}
+.hot-article-aside{position:sticky;top:calc(68px + 3.35rem);margin:0;padding:0 1.25rem 1rem 0;border-right:1px solid var(--border)}
 .hot-article-aside-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 .75rem;font-family:var(--font-sans),DM Sans,sans-serif}
 .hot-article-aside-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
 .hot-article-aside-list li{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
@@ -68,6 +78,8 @@ article.art-shell.w.chrome-page-pad{padding-top:68px!important}
   .hot-article-page .hot-article-layout{grid-template-columns:1fr;gap:1.25rem}
   .hot-article-aside{position:static;border-right:none;border-bottom:1px solid var(--border);padding:0 0 1.15rem;margin-bottom:.35rem;order:-1}
 }
+/* 固定顶栏默认透明，正文滚过时会透出；文章页单独铺底（:has 不支持则仅依赖上文 patch） */
+body:has(article.hot-article-page) nav#site-main-nav{background-color:var(--bg)}
 `;
 
 const HOT_CSS_INDEX = `
