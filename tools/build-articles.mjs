@@ -78,8 +78,6 @@ article.hot-article-page.art-shell.w{background-color:var(--bg)}
   .hot-article-page .hot-article-layout{grid-template-columns:1fr;gap:1.25rem}
   .hot-article-aside{position:static;border-right:none;border-bottom:1px solid var(--border);padding:0 0 1.15rem;margin-bottom:.35rem;order:-1}
 }
-/* 固定顶栏默认透明，正文滚过时会透出；文章页单独铺底（:has 不支持则仅依赖上文 patch） */
-body:has(article.hot-article-page) nav#site-main-nav{background-color:var(--bg)}
 `;
 
 const HOT_CSS_INDEX = `
