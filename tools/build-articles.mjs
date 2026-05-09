@@ -26,6 +26,8 @@ const HOT_CSS_ARTICLE = `
  */
 article.art-shell.w{padding-left:48px;padding-right:48px}
 @media(max-width:768px){article.art-shell.w{padding-left:24px;padding-right:24px}}
+/* 顶栏 68px + chrome-page-pad 原先 88px 会在固定导航下留出「透明缝」，滚动时正文会闪过 */
+article.art-shell.w.chrome-page-pad{padding-top:68px!important}
 /* 正文排版沿用主站 article.css（720px prose + 居中）；勿再覆盖 margin/padding，否则会变成满宽左贴「不像手记页」 */
 /* 详情页：路径 + 侧栏 + 正文共用与目录页相同的 1100 版心；网格勿再单独居中，否则会与路径左缘错位「看不出改过」 */
 .hot-article-page .hot-article-band{
@@ -34,24 +36,26 @@ article.art-shell.w{padding-left:48px;padding-right:48px}
   margin-right:auto;
   width:100%
 }
-/* 滚动时路径条吸附在固定顶栏下（nav 高 68px，见 site-chrome.css） */
+/* 路径条吸附在顶栏下；与正文网格无缝衔接，避免滚动时中间漏缝 */
+.hot-article-page .hot-article-band{padding-top:1.15rem}
 .hot-article-page .hot-article-crumb-wrap{
   position:sticky;
   top:68px;
   z-index:120;
-  margin:0 0 .35rem;
-  padding:.45rem 0 .65rem;
+  margin:0!important;
+  padding:.35rem 0 .65rem;
   background:var(--bg);
   border-bottom:1px solid var(--border)
 }
 .hot-article-page .hot-article-crumb-wrap .art-crumb{
-  max-width:none!important;margin-left:0!important;margin-right:0!important;margin-bottom:0!important;padding-left:0!important;padding-right:0!important;text-align:left
+  max-width:none!important;margin-left:0!important;margin-right:0!important;margin-bottom:0!important;padding-left:0!important;padding-right:0!important;text-align:left;line-height:1.45
 }
+.hot-article-page .hot-article-layout{margin-top:0;padding-top:.75rem}
 /* 文章页：侧栏 + 主栏（正文柱仍为 var(--prose)） */
 .hot-article-page .hot-article-layout{display:grid;grid-template-columns:minmax(11rem,13.75rem) minmax(0,var(--prose));gap:1.75rem 2.25rem;justify-content:start;align-items:start;width:100%}
 .hot-article-page .hot-article-layout--no-aside{grid-template-columns:minmax(0,var(--prose))}
 .hot-article-main{min-width:0}
-.hot-article-aside{position:sticky;top:calc(68px + 3rem);margin:0;padding:0 1.25rem 1rem 0;border-right:1px solid var(--border)}
+.hot-article-aside{position:sticky;top:calc(68px + 2.75rem);margin:0;padding:0 1.25rem 1rem 0;border-right:1px solid var(--border)}
 .hot-article-aside-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 .75rem;font-family:var(--font-sans),DM Sans,sans-serif}
 .hot-article-aside-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
 .hot-article-aside-list li{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
@@ -67,18 +71,37 @@ article.art-shell.w{padding-left:48px;padding-right:48px}
 `;
 
 const HOT_CSS_INDEX = `
-.hot-index{padding-bottom:4rem}
-/* 首页与分类目录统一：hero 与下方 section 同宽，路径/标题/导语左对齐（参考分类目录页） */
-.hot-index .hot-index-hero{
+.hot-index{padding-bottom:4rem;padding-top:0}
+/* 子域名首页 / 分类页：红框区域（路径+标题+栏目卡或列表头）吸顶，实心背景防正文透过 */
+.hot-index-sticky-head{
+  position:sticky;
+  top:68px;
+  z-index:119;
+  background:var(--bg);
+  border-bottom:1px solid var(--border);
+  margin-bottom:1.5rem;
+  padding:1rem 0 1.15rem
+}
+.hot-index-sticky-head-inner{
   max-width:min(1100px,var(--max-w));
   margin-left:auto;
   margin-right:auto;
-  margin-bottom:2rem;
-  padding:0 0 2rem;
-  border-bottom:1px solid var(--border)
+  width:100%
 }
-.hot-index .hot-index-hero .art-crumb{margin-bottom:1.35rem}
-.hot-index .hot-index-hero .art-h1{margin-bottom:.85rem}
+.hot-index-sticky-head .hot-index-hero{
+  max-width:none!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  margin-bottom:0!important;
+  padding:0 0 1.25rem!important;
+  border-bottom:none!important
+}
+.hot-index-sticky-head .hot-index-section--cats{margin-bottom:0;padding:0}
+.hot-index-sticky-head .hot-section-label--sticky{margin:0 0 .15rem}
+.hot-index--category .hot-index-sticky-head{padding-bottom:1rem;margin-bottom:1.35rem}
+/* hero 仅在 sticky 内：宽度由 .hot-index-sticky-head-inner 约束 */
+.hot-index .hot-index-hero .art-crumb{margin-bottom:.65rem}
+.hot-index .hot-index-hero .art-h1{margin-bottom:.5rem}
 .hot-index .hot-index-hero .art-crumb,
 .hot-index .hot-index-hero .art-h1,
 .hot-index .hot-index-hero .hot-index-lead{
@@ -117,7 +140,6 @@ const HOT_CSS_INDEX = `
 .hot-article-list a{flex:1;min-width:min(100%,14rem);color:var(--text2);text-decoration:none;font-size:15px;font-weight:300;line-height:1.55}
 .hot-article-list a:hover{color:var(--accent)}
 .hot-article-list small{flex-shrink:0;color:var(--text3);font-size:12px;font-weight:400;font-variant-numeric:tabular-nums;letter-spacing:.04em}
-.hot-index--category .hot-index-hero{padding-bottom:1.75rem}
 .hot-index--category .hot-index-section{padding-top:0}
 `;
 
@@ -510,6 +532,8 @@ async function main() {
   };
 
   let indexMain = `<article class="art-shell w chrome-page-pad hot-index">
+  <div class="hot-index-sticky-head">
+  <div class="hot-index-sticky-head-inner">
   <header class="hot-index-hero">
     <nav class="art-crumb" aria-label="breadcrumb">
       <a href="https://snaplinediary.cn/">首页</a> · <span>热点</span>
@@ -530,8 +554,10 @@ async function main() {
 
   indexMain += `    </div>
   </section>
+  <p class="hot-section-label hot-section-label--sticky">全文列表</p>
+  </div>
+  </div>
   <section class="hot-index-section" aria-label="全部文章">
-    <span class="hot-section-label">全文列表</span>
 `;
 
   for (const c of catOrder) {
@@ -566,6 +592,8 @@ async function main() {
     const label = catLabels[c] || c;
     const catCanonical = `${cfg.siteOrigin}/${c}/`;
     let catMain = `<article class="art-shell w chrome-page-pad hot-index hot-index--category">
+  <div class="hot-index-sticky-head">
+  <div class="hot-index-sticky-head-inner">
   <header class="hot-index-hero">
     <nav class="art-crumb" aria-label="breadcrumb">
       <a href="https://snaplinediary.cn/">首页</a> · <a href="${cfg.siteOrigin}/">热点</a> · <span>${escapeHtml(label)}</span>
@@ -573,6 +601,8 @@ async function main() {
     <h1 class="art-h1">${escapeHtml(label)}</h1>
     <p class="hot-index-lead">共 ${group.length} 篇手记</p>
   </header>
+  </div>
+  </div>
   <section class="hot-index-section">
     <ul class="hot-article-list">
 `;
