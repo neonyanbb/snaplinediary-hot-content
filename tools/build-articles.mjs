@@ -34,15 +34,24 @@ article.art-shell.w{padding-left:48px;padding-right:48px}
   margin-right:auto;
   width:100%
 }
-.hot-article-page .hot-article-crumb-wrap{margin:0}
+/* 滚动时路径条吸附在固定顶栏下（nav 高 68px，见 site-chrome.css） */
+.hot-article-page .hot-article-crumb-wrap{
+  position:sticky;
+  top:68px;
+  z-index:120;
+  margin:0 0 .35rem;
+  padding:.45rem 0 .65rem;
+  background:var(--bg);
+  border-bottom:1px solid var(--border)
+}
 .hot-article-page .hot-article-crumb-wrap .art-crumb{
-  max-width:none!important;margin-left:0!important;margin-right:0!important;padding-left:0!important;padding-right:0!important;text-align:left
+  max-width:none!important;margin-left:0!important;margin-right:0!important;margin-bottom:0!important;padding-left:0!important;padding-right:0!important;text-align:left
 }
 /* 文章页：侧栏 + 主栏（正文柱仍为 var(--prose)） */
 .hot-article-page .hot-article-layout{display:grid;grid-template-columns:minmax(11rem,13.75rem) minmax(0,var(--prose));gap:1.75rem 2.25rem;justify-content:start;align-items:start;width:100%}
 .hot-article-page .hot-article-layout--no-aside{grid-template-columns:minmax(0,var(--prose))}
 .hot-article-main{min-width:0}
-.hot-article-aside{position:sticky;top:calc(68px + 1.25rem);margin:0;padding:0 1.25rem 1rem 0;border-right:1px solid var(--border)}
+.hot-article-aside{position:sticky;top:calc(68px + 3rem);margin:0;padding:0 1.25rem 1rem 0;border-right:1px solid var(--border)}
 .hot-article-aside-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 .75rem;font-family:var(--font-sans),DM Sans,sans-serif}
 .hot-article-aside-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
 .hot-article-aside-list li{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
