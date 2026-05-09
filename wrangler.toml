@@ -1,0 +1,6 @@
+# Workers「静态资源」部署：`npm run build` 生成 ./_site 后由 `wrangler deploy` 上传。
+name = "snaplinediary-hot-content"
+compatibility_date = "2025-05-09"
+
+[assets]
+directory = "./_site"
