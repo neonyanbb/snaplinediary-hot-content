@@ -5,151 +5,147 @@ category: github-projects
 category_label: "GitHub 新项目速递"
 date: 2026-05-20
 slug: 06-github-projects-article-01-ds4-20260509
-reading_minutes: 3
+reading_minutes: 8
 ---
 
-> **热点手记** · GitHub 新项目速递 · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-05-20
+> **热点手记** · GitHub 新项目速递 · hot.snaplinediary.cn · 估读约 8 分钟 · 2026-05-20
 
 ## 背景：本地推理为什么又热
 
-云端 API 在成本、延迟与隐私上的压力，让 2026 年出现一批 **「一个模型 + 一个引擎」** 的专用项目，而不是等通用框架慢慢适配。ds4（[github.com/antirez/ds4](https://github.com/antirez/ds4)）由 Redis 创造者 Salvatore Sanfilippo 发布，目标极其聚焦：在 Mac 上用 Metal 跑 DeepSeek V4 Flash，并探索磁盘级 KV cache。
+云端 API 在成本、延迟与隐私上的压力，让 2026 年出现一批「一个模型 + 一个引擎」的专用项目，而不是等通用框架慢慢适配。ds4（github.com/antirez/ds4）由 Redis 创造者 Salvatore Sanfilippo 发布，目标极其聚焦：在 Mac 上用 Metal 跑 DeepSeek V4 Flash，并探索磁盘级 KV cache。
+
+这个项目不是 hobby toy。antirez 在 README 里明确写了设计取舍：代码路径要短、 Metal 内核要 hand-tuned、 KV cache 要当成可持久化的一等公民。对于需要在本地跑大模型长上下文的开发者，这是一个值得严肃评估的选项。
 
 ## 技术要点
 
-**专用而非通用**  
-ds4 不是又一个 GGUF 通用加载器，而是绑定 DeepSeek V4 Flash 的推理路径，借鉴 llama.cpp/GGML 的量化与 Metal 经验，但代码路径更短、更专。
+### 专用绑定而非通用框架
 
-**KV cache 落盘**  
-传统实现把 KV 当纯内存对象；ds4 允许 KV 持久化到 SSD。配合 2-bit 量化（README 称模型约 81GB 量级），在 128GB 内存 Mac 上讨论 **超长上下文** 成为可能（具体 token 数依赖配置与官方说明）。M3 Ultra + 大内存机器上社区曾报更高 tok/s，请以你本机 benchmark 为准。
+ds4 不是又一个 GGUF 通用加载器。它绑定 DeepSeek V4 Flash 的推理路径，借鉴 llama.cpp/GGML 的量化与 Metal 经验，但代码路径更短、更专。好处是：针对 V4 Flash 的 MoE 结构、 MLA 注意力、 MTP 多 token 预测都做了特化。坏处是：换模型要换引擎，不像 llama.cpp 那样一个二进制跑多种 GGUF。
 
-**ds4-server**  
-提供 OpenAI/Anthropic 兼容 HTTP 端点，可把本地模型接到 Claude Code、opencode 等 Agent，前缀 KV 复用降低多轮成本。
+代码结构也反映了这种专注。核心是一个约数千行的 C 文件 ds4.c，加上 Metal shader 与量化工具脚本。没有复杂的插件系统，没有跨平台抽象层。读懂 ds4.c 的推理循环，比读懂 llama.cpp 的 graph 调度容易一个数量级。
 
-## 上手步骤（摘自 README 思路）
+### KV cache 落盘机制
+
+传统实现把 KV 当纯内存对象，上下文一长就吃满 RAM。ds4 允许 KV 持久化到 SSD。配合 2-bit 量化，模型权重约 81GB 量级，128GB 统一内存的 Mac 上可以把上下文推到百万 token 级别。
+
+具体机制是：forward 过程中 KV tensors 可以选择落盘，而不是常驻 GPU/统一内存。下次续写时从磁盘加载所需 slice。这引入了磁盘 IO 延迟，但换取了上下文长度的大幅扩展。README 提到在 M3 Ultra 512GB 机器上做过验证，M3 Max 128GB 也可以跑，只是 tok/s 会下降。
+
+实际使用时，落盘目录需要高速 SSD。NVMe 外置盘比内置慢但可扩展。需要监控目录增长：一个长会话的 KV 可能占几十 GB。
+
+### ds4-server 的 OpenAI 兼容层
+
+ds4 附带 ds4-server，提供 OpenAI/Anthropic 兼容 HTTP 端点。本地模型可以接到 Claude Code、opencode、Continue 等 Agent 工具。
+
+server 支持前缀 KV 复用。多轮对话中，前缀部分的 KV 不需要重新计算，降低后续轮次的延迟和算力消耗。这对 Agent 循环特别有用：系统提示 + 工具描述通常是固定前缀，每轮只增量计算用户新输入。
+
+### 量化格式与磁盘规划
+
+DeepSeek V4 Flash 的量化档不同，磁盘与内存需求差数倍。ds4 支持 q2 和 q4，README 对 128GB 机器的建议是 q2。下载前建议自己建一张表记录：格式、文件大小、加载时间、首 token 延迟。不要在生产直接追最新量化帖。
+
+量化脚本在仓库里，可以自己从原始权重生成。这给了灵活性，也意味着你需要验证生成后的 checksum。
+
+## 上手步骤
+
+从源码编译：
 
 ```bash
 git clone https://github.com/antirez/ds4.git
 cd ds4
-./download_model.sh q2   # 需大内存，见官方说明
 make
-./ds4 -p "Explain Redis streams vs lists."
-./ds4-server --ctx 100000 --kv-disk-dir /tmp/ds4-kv --kv-disk-space-mb 8192
 ```
 
-**实测建议**：
+下载模型权重：
 
-1. 先 `make` 与单次 `-p` 推理，确认 Metal 正常。  
-2. 再开 server，用 `curl` 打兼容 API，勿一开始接生产 Agent。  
-3. 监控磁盘占用：`kv-disk-dir` 增长是否符合预期。
+```bash
+./download_model.sh q2   # 约 81GB，需大内存
+```
 
-## 与 Claude API、通用 llama.cpp 对比
+单次推理测试：
+
+```bash
+./ds4 -p "Explain Redis streams vs lists in 200 words."
+```
+
+这会验证 Metal 是否正常调用。第一次编译时确认 Xcode Command Line Tools 已安装，macOS 版本满足 README 要求。
+
+启动兼容 server：
+
+```bash
+./ds4-server --ctx 100000 \
+  --kv-disk-dir /Volumes/External/ds4-kv \
+  --kv-disk-space-mb 8192
+```
+
+客户端调用示例：
+
+```bash
+curl http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "ds4",
+    "messages": [{"role": "user", "content": "hello"}]
+  }'
+```
+
+实测建议分三步：先 make 与单次 -p 推理，确认 Metal 正常；再开 server，用 curl 打兼容 API；最后才接生产 Agent。不要一上来就把 ds4-server 塞进 Claude Code 的配置。
+
+## 实测性能参考
+
+社区在 M3 Ultra 512GB 机型上报告过数十 tok/s 的生成速度，M3 Max 128GB 上 q2 量化可以做到可用级别。具体数字波动很大，取决于上下文长度、是否启用 KV 落盘、磁盘速度。
+
+建议自己跑 benchmark：固定 prompt、固定生成长度、用 time 命令测 wall-clock。记录三项数字：加载时间、首 token 延迟、平均 tok/s。不同 macOS 版本和 Metal 驱动会有差异，不要外推别人的数字。
+
+128GB 以下机型，比如 M3 Pro 36GB 或 M2 Air 16GB，q2 可能加载失败或频繁 swap。这些机器更适合 q4 或更短上下文实验，不要强求百万 token。
+
+## 与 Claude API、llama.cpp 对比
 
 | 方案 | 优点 | 缺点 |
 |------|------|------|
-| Claude API | 零运维、质量稳 | 费用、数据出境 |
-| llama.cpp 通用 | 多模型 | V4 Flash 优化可能滞后 |
-| ds4 | 针对 V4 Flash + 磁盘 KV | 仅 Apple Metal 为主 |
+| Claude API | 零运维、质量稳 | 费用、数据出境、延迟不可控 |
+| llama.cpp 通用 | 多模型、社区大、跨平台 | V4 Flash 优化可能滞后，MoE 支持慢 |
+| ds4 | V4 Flash 专用优化、磁盘 KV、Metal hand-tuned | 仅 Apple Silicon 为主，换模型需换引擎 |
 
-## 社区与后续跟踪
+选型逻辑：如果你确定要跑 DeepSeek V4 Flash，且主力机器是 Mac，ds4 比通用框架值得试。如果模型会频繁切换，或者团队有 Linux GPU 集群，llama.cpp 或 vLLM 更灵活。
 
-关注 antirez 博客与 ds4 Issues：Metal 内核、量化格式、DeepSeek 上游变更都会影响可用性。不要在生产依赖「昨日 star 数」，要看 **近 30 天 commit 与 release 说明**。
+## Metal 环境自检与内存规划
 
-## 仓库健康度怎么读
-
-看 06-github-projects-article-01-ds4-20260509.md 所属项目时，建议同时打开：近 30 天 commit 频率、open issue 里 security 标签、release 是否 signed、文档里 Install 章节是否跟得上 main。Star 数反映关注度，不反映你可否明天上生产。fork 后先在自己的 GitHub Actions 里跑通示例，再谈团队推广。
-
-## 贡献与回馈
-
-若 POC 成功，考虑提 PR 修文档错别字或补中文 README，比只发推特更有助于项目持续维护。上游合并慢时，维护内部 fork 的 patch 分支，定期 rebase。
-
-## 生产准入检查（通用）
-
-- [ ] 许可证允许商用  
-- [ ] 密钥不进仓库  
-- [ ] 有回滚方案  
-- [ ] 有 on-call  
-- [ ] 数据出境合规
-
-## Metal 环境自检
+确认 Metal 可用：
 
 ```bash
-# 示意：确认 Metal 可用（以 ds4 README 为准）
-system_profiler SPDisplaysDataType | head
+system_profiler SPDisplaysDataType | grep "Metal"
 ```
 
 128GB 统一内存机型与 16GB 笔记本体验差一个数量级。POC 前对照 README 硬件表，不要借同事机器跑通就在生产下单。
 
-## kv-disk 监控
+内存规划建议：模型权重 81GB（q2）+ 系统与缓存预留 + KV 磁盘缓冲。128GB 机器上不要同时开 Chrome 几十个标签再跑 ds4。ds4 是内存饥饿型应用，需要独占资源。
 
-为 `kv-disk-dir` 所在卷设磁盘告警（80% 阈值）。长会话 KV 增长可能几天吃满 SSD。每周清理试验目录，生产用独立卷。
+## KV disk 监控与磁盘管理
+
+为 kv-disk-dir 所在卷设磁盘告警，建议 80% 阈值。长会话 KV 增长可能几天吃满 SSD。
+
+清理脚本示例：
+
+```bash
+#!/bin/bash
+# 每周清理试验 KV 目录
+find /Volumes/External/ds4-kv -name "*.tmp" -mtime +7 -delete
+df -h /Volumes/External
+```
+
+生产用独立卷，不要把 KV 落盘放到系统盘。系统盘满了会导致 macOS 不稳定。
 
 ## 与 Ollama 并存
 
-若本机已跑 Ollama，注意端口与 GPU 内存争用。建议分时：白天 Ollama 实验，夜间 ds4 批推理。同时跑可能触发 Metal OOM，日志里表现为莫名 hang。
+若本机已跑 Ollama，注意端口与 GPU 内存争用。Ollama 默认占 11434，ds4-server 默认占 8080，端口不冲突，但统一内存是共享的。
 
-## 生产准入补充（ds4 专用）
+建议分时运行：白天 Ollama 实验，夜间 ds4 批推理。同时跑可能触发 Metal OOM，日志里表现为莫名 hang。如果必须同时跑，给 Ollama 限制并发或换小模型。
 
-- [ ] 已测 `-p` 单次与 server 模式  
-- [ ] 已记录量化模型 checksum  
-- [ ] 已准备 API 限流（若对外暴露）  
-- [ ] 已写回滚到 Claude API 的开关
+## antirez 项目风格与维护预期
 
-## 量化格式与磁盘规划
+ds4 偏研究与黑客精神，文档更新节奏随作者兴趣波动。生产依赖要 fork 并锁定 commit，自行跑 CI。不要把「作者名气」当 SLA。
 
-DeepSeek V4 Flash 的量化档不同，磁盘与内存需求差数倍。下载前用表格记录：格式、文件大小、加载时间、首 token 延迟。不要 Production 直接追最新量化帖。
-
-## server 模式压测
-
-用 `curl` 连续 100 次短 prompt，看是否内存泄漏或 KV 目录暴涨。压测在隔离卷上跑，避免打满系统盘导致整机不可用。
-
-## 与团队推理服务分工
-
-ds4 适合个人实验与离线批处理；团队在线服务仍可能用集中 GPU 集群。明确「ds4 不是 HA 服务」，避免业务方误用单机当 SLA 接口。
-
-## antirez 项目风格与期望
-
-ds4 偏研究与黑客精神，文档更新节奏随作者兴趣波动。生产依赖要 fork 并锁定 commit，自行跑 CI。不要把「作者名气」当 SLA。升级前阅读 commit message 是否触及 Metal 内核或量化格式破坏性变更。
-
-## 与 Apple 新硬件周期
-
-新 Mac 上市常带来 Metal 行为差异。在目标机型上重跑基准，不要外推上一代数字。M 系列统一内存机型更适合长 KV，笔记本 16GB 仅适合短对话实验。
-
-## 实操附录：ds4 七日 POC 日记
-
-D1 硬件核对与 `make`；D2 单次 `-p` 推理；D3 server+curl；D4 磁盘 KV 监控；D5 压测 100 次；D6 写回滚到云 API 开关；D7 给架构组一页结论。每日记录：延迟、内存峰值、失败日志。无日记的 POC 不允许进入预算审批。
-
-## 实操附录：与 antirez 社区互动
-
-在 Issues 搜索「Metal」「OOM」「quantization」近 30 天讨论，评估风险。若维护节奏放缓，内部 fork 指定维护人，不要假设作者会修你遇到的 bug。
-
-## 读者可执行检查
-
-在目标 Mac 上完成 POC 日记 D1～D3，把延迟与内存峰值记入表格。未记录数据不得申请 GPU/机器预算。
-
-## 与 llama.cpp 共存注意
-
-若同机已装其他 Metal 推理服务，排班分时运行并监控显存占用，避免 OOM 导致整机假死。
-
-## 发布前核对
-
-POC 日记 D1～D7 齐全才可申请机器预算。缺 D5 压测数据不得口头批准 Metal 机器。
-
-## 上线门禁补充
-
-POC 否定也要归档：机器型号、量化档、失败日志、回滚开关位置。六个月后有人重复提问时，直接指向归档页，而不是重跑三天试验。若 POC 通过，还需补充「谁 on-call 看 Metal OOM」与「磁盘告警阈值」，否则生产第一周就会因 KV 涨满而中断服务。
-
-## 版本记录
-
-Metal 驱动升级后重跑 D5 压测，结果差异超过百分之二十则更新 POC 结论页。
-
-## 主题附注 1
-
-请在验收时完成上文自查项，并把日期记在团队 wiki 的「ds4：antirez 的 DeepSeek V4 Flash Metal 推理引擎实测要点」条目下。
-
-## 主题附注 2
-
-若官方 Release 变更配置字段，以当日文档为准，并在同 wiki 条目追加链接与日期。
+升级前阅读 commit message，特别是触及 Metal 内核或量化格式的变更。antirez 的提交风格直接，破坏性变更不会特别标注，需要自己 diff。
 
 ## 局限与不适合谁
 
-没有 128GB 级内存的机器，q2 路线可能不现实，请读 README 硬件表。非 Mac 或不愿用 Metal 的用户目前不合适。专用引擎随模型版本演进，升级可能破坏性。生产 SLA 需自运维，antirez 项目偏研究与黑客精神，不是云厂商托管服务。法律与许可证请读仓库 LICENSE，商用前自行评估。
+没有 128GB 级内存的机器，q2 路线可能不现实，请读 README 硬件表。非 Mac 或不愿用 Metal 的用户目前不合适。专用引擎随模型版本演进，DeepSeek 发布 V5 时 ds4 可能需要重写适配。生产 SLA 需自运维，antirez 项目偏研究与黑客精神，不是云厂商托管服务。法律与许可证请读仓库 LICENSE，商用前自行评估。若团队需要多模型切换或跨平台部署，llama.cpp 或 vLLM 更合适。

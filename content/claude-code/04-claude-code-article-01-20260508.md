@@ -12,116 +12,101 @@ reading_minutes: 3
 
 ## 从补全到 Agent：范式差异
 
-GitHub Copilot 经典模式是 **预测下一行**；Cursor 强化 **文件级上下文**；Claude Code 默认目标是 **完成一项开发任务**：读树、改多文件、执行 shell、根据测试失败迭代。官方 [Overview](https://code.claude.com/docs/en/overview) 将其描述为可集成终端、IDE、桌面与 Web 的 coding agent。
+GitHub Copilot 的经典模式是预测下一行代码。你写注释，它猜实现；你写函数签名，它补函数体。Cursor 在这一层做了增强，把文件级上下文和 inline chat 拉进 VS Code 分支里，让 Agent 能在当前打开的文件周围做局部重构。但无论是 Copilot 还是 Cursor，默认交互单元仍然是「一段代码」。
 
-若你 80% 时间是手写 + 偶尔补全，Agent 溢价不明显；若常做跨目录重构、迁移、补测试，Agent 省的是 **协调成本**，不是打字速度。
+Claude Code 的默认交互单元是「一项开发任务」。启动会话后，它会先读仓库目录树，理解项目结构；你给出任务描述，它自行决定需要改哪些文件、执行哪些 shell 命令、甚至根据测试失败结果迭代修复。这不是打字加速，而是把「跨文件协调」这部分认知负担从人转移到 Agent。
+
+如果你的日常是写业务组件、调 CSS、改单行逻辑，Tab 补全已经够快，Agent 的额外开销反而显得笨重。但如果你经常做这些事：给遗留模块补测试并同步改 mock、把 Python 2 工具链迁到 Python 3、在 monorepo 里跨 packages 重命名接口，Agent 节省的是「手动定位文件 + 复制错误日志 + 确认副作用」的协调时间。
 
 ## 四种入口怎么选
 
-| 入口 | 适合 | 注意 |
-|------|------|------|
-| 终端 CLI | CI 旁路、远程 SSH、脚本化 | 熟悉 shell 的开发者 |
-| IDE 集成 | 边改边看 diff | 与现有快捷键共存 |
-| 桌面 App | 多项目会话、Focus 模式 | 以当期 changelog 为准 |
-| Web | 轻量审查、外出办公 | 仓库访问权限 |
+Claude Code 目前提供终端 CLI、IDE 插件、桌面 App 和浏览器四种入口，它们不是互相替代，而是覆盖不同场景。
 
-团队可统一 **「计划与执行在 CLI，肉眼审查在 IDE」**，减少「到底在哪个窗口改」的混乱。
+终端 CLI 是最完整的形态。安装后直接在项目根目录运行 `claude`，Agent 拥有完整的 shell 访问权限，可以跑 `npm test`、`docker build`、`git diff`，失败日志直接回流到会话上下文。适合远程 SSH 服务器、CI 旁路调试、以及习惯 tmux 或 zsh 的开发者。代价是必须熟悉命令行，且对权限管理要求更高。
 
-## 四个能力块（2026 常见组合）
+IDE 集成（以 VS Code 插件为例）把 Claude Code 的会话嵌在编辑器侧边栏。优势是 diff 可视化：Agent 改的文件会高亮变动行，你可以逐行接受或拒绝。劣势是 shell 执行受限于 IDE 内置终端的缓冲和路径环境，复杂命令容易跑歪。适合边改边审的单文件任务。
 
-1. **Plan Mode**：先 `/plan` 再改（详见本站 Plan Mode 一文）。
-2. **Model Picker**：简单任务用小模型，重构用强模型。
-3. **MCP**：接 issue、文档、内部 API。
-4. **Hooks / Subagents**：门禁与子任务（详见 Hooks 一文）。
+桌面 App 提供 Focus Mode 和多项目会话管理，界面以当期 changelog 为准。适合需要长时间连续工作的重构任务，能屏蔽通知干扰。但桌面版的 shell 集成深度通常弱于终端 CLI，重依赖命令行的团队可能觉得不过瘾。
 
-不必第一天全开；顺序建议：CLI 跑通 → Plan → MCP 只读 → Hooks。
+Web 版用于轻量审查或外出办公，不需要本地安装。但仓库访问依赖 GitHub 授权，且无法执行本地 shell 命令。适合在 iPad 或 borrowed 机器上快速看 Plan 输出，不适合实际写代码。
 
-## 快速上手（最小路径）
+团队落地的常见约定是：计划与多文件执行统一在终端 `claude` 里做，肉眼审查与单文件微调回 IDE。这样减少「到底在哪个窗口改」的混乱，也避免两人同时批准冲突 diff。
+
+## 与 Cursor 的具体差异
+
+两者都能做多文件编辑，但交互哲学不同。Cursor 的 Agent 面板以可视化 diff 为核心，每一步改动都弹窗让你确认，适合「边改边看」的视觉型开发者。Claude Code 的交互在终端流里完成，Plan 输出是文本清单，diff 通过 `git diff` 查看，更适合「先全局再细节」的工程师。
+
+具体差异体现在三个场景：
+
+第一，跑测试。Claude Code 在终端里直接执行 `pytest` 或 `npm test`，失败日志自动截取进会话，Agent 可以接着读日志修代码。Cursor 需要把测试命令贴进 chat，或者依赖 IDE 终端的反向解析，上下文容易断裂。
+
+第二，远程开发。Claude Code 在 SSH 跳板机上直接运行，不需要本地图形界面。Cursor 的 SSH 远程开发依赖 VS Code 的 Remote-SSH， Agent 能力在远程端有时会降级。
+
+第三，Hooks 与门禁。Claude Code 的 Hooks 体系（SessionStart、PreToolUse、PostToolUse）允许在工具调用前后插入脚本，实现路径封禁、自动测试等。Cursor 的等价能力目前集中在 `.cursorrules` 与 project rules，以文本约束为主，执行层门禁弱于 Claude Code 的 hooks.json。
+
+## 快速上手：最小路径与首条命令
+
+安装需要 Node.js 18+ 环境：
 
 ```bash
 npm install -g @anthropic-ai/claude-code
+```
+
+安装完成后，进入任意 Git 仓库根目录：
+
+```bash
 cd your-project
 claude
 ```
 
-首条任务选 **只读**：「列出 `src/` 下依赖 React 的文件，不要修改」。通过后再做「添加一个带测试的工具函数」类小改，建立对 diff 质量的信任。
+首次启动会要求登录 Anthropic 账号并授权。进入会话后，不要急着让 Agent 改代码。首条任务建议选只读：
 
-## 文档阅读顺序（官方）
-
-建议路径：Overview → CLI 安装 → Plan Mode → MCP → Hooks。每读完一节做一次 10 分钟练习，比一次读完忘光更有效。遇到命令找不到，先 `claude --help` 与 docs 站内搜索，版本差异以你安装的 CLI `--version` 为准。
-
-## 团队落地时的权限边界
-
-让 Claude Code 跑 shell 等于给实习生 root 钥匙。最低限度：专用分支、禁止直接 push main、敏感目录只读挂载。CI 里可以只允许 Agent 开 PR，由人 merge。把 `.claude` 或等价忽略文件提交进仓库，明确哪些路径永不可改（`infra/prod/`、密钥模板等）。
-
-## 与 CI 的衔接思路
-
-理想闭环：Agent 改代码 → PostToolUse 跑 `npm test` → 失败则继续修 → 通过后 `git push` 触发 GitHub Actions。现实里很多团队停在「本地测过」，建议至少把 **同一条测试命令** 写进 Hooks，减少「我机器上过但 CI 挂」的扯皮。
-
-## 终端 vs IDE：团队约定示例
-
-```text
-计划与多文件执行：终端 claude
-肉眼审查与单文件微调：IDE
-禁止：两处同时改同一分支
+```
+列出 src/ 下所有依赖 React 的文件，不要修改任何内容。
 ```
 
-## 权限最小集
+这个指令测试三件事：Agent 是否能正确遍历目录树、是否能读文件内容、是否遵守「不要修改」的约束。通过后，再做第二级任务：
 
-- 分支：`agent/*` 专用前缀  
-- 路径：`src/` 可写，`infra/prod/` 拒绝  
-- 命令：允许 `npm test`，拒绝 `curl | sh`  
+```
+在 src/utils/ 下添加一个带单元测试的日期格式化函数，使用项目现有的测试框架。
+```
 
-把规则写进 Hooks 示例配置旁注，新人 onboarding 时一起讲。
+观察 diff 质量：是否引入了无关格式化、是否复用了现有依赖、测试是否真能跑过。建立信任后，再开放更大范围的写权限。
 
-## 首月技能路径
+## 项目级配置：CLAUDE.md 与忽略规则
 
-周 1 只读扫树；周 2 单文件+测试；周 3 Plan 小重构；周 4 MCP 只读 issue。每周写一条「本仓库禁止 Agent 做的事」，比泛泛读 docs 更快建立肌肉记忆。
+在仓库根目录放一份 `CLAUDE.md`，Claude Code 会在每次 SessionStart 时自动读取。这份文件不是可有可无的装饰，而是减少重复沟通的核心配置。建议包含：
 
-## 会话内命令习惯
+- 项目技术栈与主要命令（`npm run dev` 端口、`pytest` 路径参数）
+- 代码风格约束（是否用分号、单引号还是双引号、最大行宽）
+- 目录说明（`legacy/` 只读、`infra/prod/` 禁止修改、`packages/core/` 修改需测试）
 
-固定用 `/plan` 开始大任务；用 `/compact` 或官方等价命令压缩历史（以 docs 为准）；结束会话前要求 Agent 输出「改了哪些文件、测了哪些命令」。养成习惯后，隔天接手的人能读最后一条消息续工。
+同时，在 `.claudeignore` 或借助 `.gitignore` 机制排除不需要 Agent 扫描的路径，比如 `node_modules/`、`dist/`、密钥模板文件。大型 monorepo 里，忽略规则直接决定上下文质量；让 Agent 读进几千个构建产物，既浪费 token 又容易污染计划。
 
-## 与 Git 工作流
+## 权限边界与团队沙箱
 
-推荐 `agent/YYYYMMDD-任务名` 分支；禁止 `-f push`。合并前人看 diff，Agent 写 commit message 可辅助但不可自动 merge 到 main。把规则写进 `CONTRIBUTING.md`，Agent 读得到。
+让 Claude Code 跑 shell 等于给一位不会疲倦的实习生 root 钥匙。团队落地的最低限度包括三条：
 
-## 远程 SSH 场景
+分支隔离。Agent 只能在 `agent/YYYYMMDD-任务名` 这类专用分支上写代码，禁止直接 push main 或 production。CI 里配置规则，所有 `agent/*` 分支的提交必须经人审 PR 后才能合并。
 
-在跳板机上跑 Claude Code 时，确认代码目录与本地 IDE 同步策略。避免 SSH 上改了一半、本地又改一半。推荐 SSH 只读调研，写入仍在笔记本 IDE 审查后 push。
+路径封禁。通过 Hooks 的 PreToolUse 事件，拒绝写入 `infra/prod/`、`secrets/`、`package-lock.json` 等敏感路径。配置示例逻辑是：如果工具调用涉及 write 且路径匹配 `infra/**`，直接 deny 并返回提示「生产基础设施禁止 Agent 直写」。
 
-## 实操附录：四人结对上 Claude Code
+命令白名单。允许 `npm test`、`pytest`、`git diff`、`git branch`，拒绝 `curl | sh`、`rm -rf /`、`docker system prune` 等危险操作。把白名单写进 Hooks，而不是依赖口头提醒。
 
-两人一组，A 操作终端，B 审查 Plan 与 diff，30 分钟完成「只读扫树+单文件修测试」；角色互换再来 30 分钟。结束后全组共读 `claude --version` 与 docs 链接，确认版本一致。结对笔记写入团队 wiki，作为 onboarding 第零天必修。
+## 终端与 IDE 的协作约定
 
-## 读者可执行检查
+混用两种入口时，团队需要明文约定：
 
-在本机跑通只读扫树任务，并把 `claude --version` 记入团队 wiki。未跑通不要开启写权限。
+计划与多文件执行：终端 claude。肉眼审查与单文件微调：IDE。禁止两处同时改同一分支，冲突时以先开 PR 者为准。
 
-## 发布前核对
-
-`claude --version` 与团队 wiki 一致。只读扫树未通过者，本周禁止 Agent 写 `src/`。
-
-## 会后跟进
-
-只读扫树通过的同事，才开放 `src/` 写权限培训名额，控制第一波事故面。
-
-## 版本记录
-
-CLI 版本每月对齐一次，避免有人用旧命令导致文档步骤失效。对齐日在日历重复。
-
-## 主题附注 1
-
-请在验收时完成上文自查项，并把日期记在团队 wiki 的「Claude Code 是什么：终端 Agent 与 IDE 插件的分工」条目下。
-
-## 主题附注 2
-
-若官方 Release 变更配置字段，以当日文档为准，并在同 wiki 条目追加链接与日期。
-
-## 主题附注 3
-
-生产变更需指定 on-call 与回滚步骤，与本主题相关的命令以你环境实测为准。
+这个约定的背后是权限逻辑：终端拥有完整 shell，适合驱动测试和批量修改；IDE 拥有可视化 diff，适合逐行审查。让同一个人同时在终端和 IDE 里改同一个文件，Agent 和人类编辑器的改动会互相覆盖，debug 成本极高。
 
 ## 局限与不适合谁
 
-Claude Code 需要 Anthropic 账号与费用预算，且代码会上传云端处理（企业需协议）。不适合不愿让 Agent 跑 shell 的环境。纯前端静态页、单文件作业，Cursor Tab 可能更轻。功能名称与定价随版本更新，实施前查阅官方文档，本文不构成采购承诺。
+Claude Code 需要 Anthropic 账号与 API 或订阅费用，代码会上传到 Anthropic 云端处理，企业需签数据协议。对禁止云端代码分析的金融、政务或军工环境，直接排除。
+
+纯前端静态页、单文件脚本、LeetCode 刷题这类作业，Cursor Tab 或 Copilot 补全更轻更快。Claude Code 的重度上下文加载和 Plan 输出对这些场景是过度设计。
+
+此外，Claude Code 的 shell 自治意味着它会真的执行 `rm`、`git push`、`npm publish`。如果团队没有 CI 门禁、没有分支保护、没有代码审查习惯，上线 Agent 等于加速事故。工具本身不替代工程纪律。
+
+功能名称与定价随版本更新，实施前查阅 code.claude.com/docs 当期文档。本文基于 2026 年 5 月社区实测，不构成采购承诺。

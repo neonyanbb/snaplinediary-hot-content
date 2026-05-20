@@ -14,7 +14,7 @@ reading_minutes: 3
 
 Hermes 官方定位是「The agent that grows with you」，工程上体现为 **单一 gateway 进程** 路由各 IM 与 CLI 消息，记忆与技能在网关层复用，而不是每个 App 各存一份上下文。2026 年文档与 Release 显示支持渠道数量已到 20+（含 LINE、SimpleX 等新项，以你安装的版本为准），这对「手机记灵感、办公室 Slack 续写」的场景是刚需。
 
-典型启动方式（与社区文档一致，版本差异请对照 README）：
+典型启动方式：
 
 ```bash
 npm install -g @nous/hermes-gateway
@@ -23,6 +23,8 @@ hermes gateway status
 ```
 
 **对比实测**：只开 CLI 时，跨设备体验接近普通终端 Agent；接上 Telegram 后，同一用户在手机发的语音转写应能在桌面 Slack 线程里被引用，这才是网关价值。若两端的回答像两个陌生人，优先查 Bot 是否连到同一 gateway 实例，而不是先换更大模型。
+
+网关的数据目录默认在 `~/.hermes/`，其中 `memory.db` 是 SQLite 记忆库，`config.yaml` 是主配置。启动前检查这两个路径的权限，确保运行用户有读写权。
 
 ## 平台接入优先级（省时间的顺序）
 
@@ -35,84 +37,106 @@ hermes gateway status
 
 建议 **先 Telegram 跑通记忆探针，再扩 Slack**。一次性接入五个平台只会增加 Token 泄露面与排错难度。
 
-## Skills：从社区装到「自己会写」
-
-Hermes 的 Skills 与 [agentskills.io](https://agentskills.io) 开放标准兼容：每个技能是可调用的能力包，例如论文摘要、代码审查模板。安装与调用模式（以文档示例为准）：
+**Telegram 的具体配置**：在 BotFather 创建 Bot 后，将 Token 写入环境变量 `TELEGRAM_BOT_TOKEN`。本地开发用 cloudflared 隧道暴露端口：
 
 ```bash
-hermes skill install research-paper-summarizer
+cloudflared tunnel --url http://localhost:3000
+```
+
+复制输出的 https URL，在 Hermes 配置里将 Telegram webhook 指向该地址。给 Bot 发 `/start`，确认有回复后再进行下一步。
+
+**Slack 的具体配置**：在 Slack API 控制台创建 App，OAuth scope 至少包含 `chat:write`、`app_mentions:read`、`im:history`。安装到工作区后复制 Bot User OAuth Token，写入 `SLACK_BOT_TOKEN`。Event Subscriptions 里填写你的 gateway URL 加 `/slack/events`。如果 Event URL 验证失败，检查 cloudflared 隧道是否还在运行、路径是否正确。
+
+**Discord 的具体配置**：在 Discord Developer Portal 创建 Application，添加 Bot，获取 Token。OAuth2 URL Generator 里选 `bot` scope 和 `Send Messages`、`Read Message History` 权限。将 Bot 邀请到服务器后，在 Hermes 配置里填入 Token 并启用 Discord adapter。
+
+## Skills：从社区装到「自己会写」
+
+Hermes 的 Skills 与 agentskills.io 开放标准兼容：每个技能是可调用的能力包，例如论文摘要、代码审查模板。安装与调用模式：
+
+```bash
+hermes skills install research-paper-summarizer
 # 会话内
-/research-paper-summarizer https://arxiv.org/abs/xxxx
+/summarize https://arxiv.org/abs/xxxx
 ```
 
 **实测要点**：
 
-- 安装后立刻用 **一条边界清晰** 的任务测试，避免「帮我变强」这类模糊指令。
-- 技能失败时看 gateway 日志，区分「技能未加载」与「模型拒答」。
-- v2026.5 路线强调 Agent 可从经验中改进技能；生产环境仍应对自动改写技能保持人工审查。
+- 安装后立刻用 **一条边界清晰** 的任务测试，避免「帮我变强」这类模糊指令。好的测试指令是：「总结这篇论文的方法、实验结果、局限，用中文输出，不超过 200 字。」
+- 技能失败时看 gateway 日志，区分「技能未加载」（日志里有 `skill not found`）与「模型拒答」（日志正常但回复为空）。
+- v2026.5 路线强调 Agent 可从经验中改进技能；生产环境仍应对自动改写技能保持人工审查，避免技能逻辑漂移。
 
-社区库见 [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)；企业场景更推荐 fork 后内网托管技能包，而不是直接拉公网最新版。
+社区库见 NousResearch/hermes-agent；企业场景更推荐 fork 后内网托管技能包，而不是直接拉公网最新版。直接拉取的风险在于：社区技能可能包含未审计的 shell 命令或网络请求。
+
+**自定义 Skill 的最小结构**：
+
+```yaml
+# ~/.hermes/skills/my-skill/skill.yaml
+name: my-skill
+version: 1.0.0
+description: "扫描代码仓库的 TODO 注释"
+entry: index.js
+```
+
+```javascript
+// ~/.hermes/skills/my-skill/index.js
+module.exports = async function(context, args) {
+  const fs = require('fs');
+  const files = fs.readdirSync(args.path || '.');
+  return files.filter(f => f.endsWith('.js'))
+    .map(f => ({file: f, todos: []}));
+};
+```
+
+将目录复制到 `~/.hermes/skills/` 后重启网关即可加载。
 
 ## 和 Claude Code、纯 MCP 客户端的分工
 
 | 需求 | 更合适的选择 |
-|------|----------------|
+|------|--------------|
 | 在仓库里多文件重构、跑测试 | Claude Code / Cursor Agent |
 | 通勤语音记待办、多 IM 统一记忆 | Hermes 网关 |
-| 只连 Jira 只读、在 IDE 里用 | Cline + MCP |
+| 只连外部系统只读、在 IDE 里用 | Cline + MCP |
 
 Hermes 不是「更强代码补全」，而是 **生活与工作流的长期上下文总线**。若团队 90% 时间在 VS Code 里，Hermes 仍可作为 Slack 里的项目秘书，但不必强行替代 IDE Agent。
 
 ## 安全与运维清单
 
-- 所有 Bot Token、Honcho Key 放环境变量或密钥管理，禁止写进 markdown 仓库。
-- 网关进程建议用 systemd 或 Docker 托管，崩溃自动拉起。
-- 定期备份网关 SQLite（若用内置记忆），升级前先看 Release Breaking Changes。
-- 对公网暴露的 Slack/Discord Webhook 加 IP 限制或反向代理鉴权。
+- 所有 Bot Token、Honcho Key 放环境变量或密钥管理，禁止写进 markdown 仓库。`.env` 文件要加入 `.gitignore`。
+- 网关进程建议用 systemd 或 Docker 托管，崩溃自动拉起。systemd 配置示例：
+  ```ini
+  [Service]
+  Restart=always
+  RestartSec=5
+  ```
+- 定期备份网关 SQLite，升级前先看 Release Breaking Changes。备份命令：
+  ```bash
+  cp ~/.hermes/memory.db ~/.hermes/memory.db.$(date +%Y%m%d)
+  ```
+- 对公网暴露的 Slack/Discord Webhook 加反向代理鉴权。最简单的做法是用 nginx 限制 IP：
+  ```nginx
+  location /slack/events {
+    allow 你的办公IP;
+    deny all;
+    proxy_pass http://localhost:3000;
+  }
+  ```
 
 ## 多平台 Token 治理
 
-每接一个 IM 平台，就新增一组 Bot Token 与事件订阅。建议用表格记录：平台、Bot 名、权限范围、创建日、轮换日。Slack/Discord 的 OAuth scope 宁可少给，后续再加。
+每接一个 IM 平台，就新增一组 Bot Token 与事件订阅。建议用表格记录：平台、Bot 名、权限范围、创建日、轮换日。Slack/Discord 的 OAuth scope 宁可少给，后续再加。权限过大的 Bot 被入侵后，攻击者可以读全部频道历史或冒充 Bot 发消息。
 
-## Skills 版本锁定
-
-生产环境不要用 `skill install` 追最新不设版本。fork 技能仓库，打 tag，网关只从内部 Git 拉。社区技能质量参差，自动更新可能一夜引入危险 shell 命令。
+**Token 泄露应急**：一旦发现 Token 可能泄露，立即在对应平台刷新或撤销，然后更新网关环境变量并重启。不要等确认泄露再行动，因为 Bot Token 通常没有访问日志。
 
 ## 容量规划粗算
 
-单网关进程能撑多少并发，取决于模型延迟与消息频率。个人使用通常无感；若在 500 人群里 @Bot，要考虑队列与限流，必要时按团队拆多个 gateway 实例并配置 Honcho peer 隔离。
+单网关进程能撑多少并发，取决于模型延迟与消息频率。个人使用通常无感；若在 500 人群里 @Bot，要考虑队列与限流。Hermes 网关本身不内置限流，需要在模型 API 层或反向代理层配置。比如 OpenAI 的 rate limit 是 TPM（tokens per minute），超出后返回 429，网关需要能优雅处理这种错误并提示用户「稍后重试」。
 
-## 事件风暴下的行为
-
-大促或 incident 期间，群消息暴增，Bot 可能被 @ 几百次。要提前设：队列、降级回复（「稍后处理」）、或临时关闭非关键通道。否则模型费用与延迟都会失控。
-
-## 与 Cron 结合
-
-用系统 cron 触发 gateway 健康检查，失败发 PagerDuty。IM Bot 不是监控系统的替代品，而是监控的 **通知通道之一**。
-
-## 首周上线里程碑（可打勾）
-
-| 天 | 动作 | 通过 |
-|----|------|------|
-| D1 | 单平台收发 | 消息往返 |
-| D2 | 装 1 个只读 Skill | 任务成功 |
-| D4 | 第二平台 | 跨端探针 |
-| D7 | Token 表+备份 | 可恢复 |
-
-D4 前不要接写库 MCP。D7 未完成备份，不要接生产群 @全体。
-
-## Skills 评审会（月度）
-
-评审：输入输出是否清晰、是否含危险 shell、是否有版本 tag。未通过不得 `skill install` 到生产网关。
-
-## 22 平台的取舍
-
-不必全开。选员工真实在用的三个平台，其余关闭配置项。平台越多，Token 表与 webhook 故障面越大。
-
-## 实操附录：Skills 白名单
-
-生产网关只允许白名单内技能 hash。新技能先进测试 Bot 一周，再申请加入白名单。
+必要时按团队拆多个 gateway 实例并配置 Honcho peer 隔离，避免不同团队的记忆串库。
 
 ## 局限与不适合谁
 
-如果你只需要网页里偶尔问问题、从不跨设备、也不打算接 IM，网关 + 多平台是过度工程。Skills 生态仍在快速变化，追求「装完 200 个技能就全自动」不现实，仍要人选任务、审输出。Windows 原生支持在 2026.5 进入 beta，生产关键路径建议先在 Linux/macOS 验证。最后，渠道数量随版本变，部署前请核对当前版本的 [官方文档](https://hermes-agent.nousresearch.com/docs)。
+如果你只需要网页里偶尔问问题、从不跨设备、也不打算接 IM，网关 + 多平台是过度工程。Skills 生态仍在快速变化，追求「装完 200 个技能就全自动」不现实，仍要人选任务、审输出。
+
+Windows 原生支持在 2026.5 进入 beta，生产关键路径建议先在 Linux/macOS 验证。Windows 上的路径分隔符、权限模型与 Unix 不同，自定义 skill 开发时容易出现跨平台 bug。
+
+渠道数量随版本变，部署前请核对当前版本的官方文档。最后，网关作为单点故障源，生产环境务必配置进程守护和健康检查，否则一次 OOM 就会让所有 IM 渠道同时失联。

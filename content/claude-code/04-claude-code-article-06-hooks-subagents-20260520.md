@@ -12,41 +12,31 @@ reading_minutes: 3
 
 ## 扩展层在解决什么问题
 
-当 Claude Code 能读仓库、改文件、跑 shell 时，风险从「答错」变成 **「改错且已落盘」**。官方扩展体系里，Hooks 在生命周期节点插入你的逻辑；Subagents 把大任务拆成隔离上下文的小循环；MCP 接外部系统。三者叠加，才能得到「能自治但有闸」的流程，而不是单次提示词祈祷。
+当 Claude Code 能读仓库、改文件、跑 shell 时，风险从「答错」变成「改错且已落盘」。官方扩展体系里，Hooks 在生命周期节点插入你的逻辑；Subagents 把大任务拆成隔离上下文的小循环；MCP 接外部系统。三者叠加，才能得到「能自治但有闸」的流程，而不是单次提示词祈祷。
 
-文档入口：[Hooks reference](https://code.claude.com/docs/en/hooks)、[Subagents](https://code.claude.com/docs/en/sub-agents)、[Features overview](https://code.claude.com/docs/en/features-overview)。
+文档入口：Hooks reference、Subagents、Features overview 均在 code.claude.com/docs 下。升级 Claude Code 后务必复查 Breaking Changes，hooks.json 的字段和事件名可能随版本调整。
 
 ## Hooks：常见事件与用途
 
-| 事件（示例） | 适合做什么 |
-|--------------|------------|
-| SessionStart | 打印仓库规范、加载团队 checklist |
-| UserPromptSubmit | 拦截含密钥格式的提交 |
-| PreToolUse | 禁止 `rm -rf`、限制写路径在 `src/` |
-| PostToolUse | 自动 `npm test` 某包 |
-| SubagentStart / SubagentStop | 记录子任务审计日志 |
+Hooks 目前支持的事件包括 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse、SubagentStart、SubagentStop 等。每个事件可以绑定 shell 脚本、HTTP 请求或 LLM 提示，也可以触发另一个 Subagent。
 
-Handler 可以是 shell、HTTP、LLM 提示，或 **再启动一个 Subagent**（官方说明 Hooks 可触发子 Agent）。工程上建议：
+SessionStart 适合打印仓库规范、加载团队 checklist，或者自动检查 `CLAUDE.md` 是否存在。UserPromptSubmit 可以拦截含密钥格式的提交，比如提示词里出现 `AKIA` 开头字符串时弹警告。
 
-1. PreToolUse 做 **硬拒绝**（路径、命令黑名单）。
-2. PostToolUse 做 **软验证**（测试、lint），失败时把日志塞回主会话。
-3. 避免在 UserPromptSubmit 里跑超过 10 秒的脚本，否则交互卡顿。
+PreToolUse 是最关键的硬拒绝层。在这里封禁 `rm -rf`、限制写路径只在 `src/`、禁止修改 `package-lock.json` 以外的锁文件。PostToolUse 做软验证，比如改完 `src/foo.ts` 后自动跑 `npm test -- src/foo.test.ts`，失败时把日志塞回主会话。
 
-配置位置与字段以当前版本 docs 为准，升级 Claude Code 后复查 Breaking Changes。
+工程建议：PreToolUse 做硬拒绝，路径和命令黑名单必须明确；PostToolUse 做软验证，测试失败不阻断，但要把错误回流给 Agent；UserPromptSubmit 里的脚本控制在 10 秒内，否则交互卡顿。
 
 ## Subagents：何时拆、如何收束
 
-Subagent 在独立上下文运行，向主会话返回摘要。适合：
+Subagent 在独立上下文运行，向主会话返回摘要。适合两类任务：
 
-- 扫描 `legacy/` 目录生成风险清单，但不允许直接改生产配置。
-- 并行两个只读调研（依赖版本、许可证冲突），主 Agent 合并结论后再改代码。
+只读调研。比如扫描 `legacy/` 目录生成风险清单，但不允许直接改生产配置。并行两个子任务（查依赖版本冲突、查许可证兼容），主 Agent 合并结论后再改代码。
 
-不适合：
+隔离性验证。让 Subagent 试跑一个破坏性脚本或读敏感日志，主会话不直接触碰这些资源。
 
-- 需要频繁摸同一个大文件的多轮微调（上下文来回搬运反而慢）。
-- 无人审核的「子 Agent 改完就 merge」。
+不适合的场景也有两类：需要频繁摸同一个大文件的多轮微调，上下文来回搬运反而慢；无人审核的「子 Agent 改完就 merge」，这绕过了主会话的 PreToolUse 门禁。
 
-**实测流程建议**：主会话 `/plan` 列出文件清单 → 只读 Subagent 填表 → 人工确认 → 主会话执行写入。这样 Hooks 的 PreToolUse 仍保护主路径。
+实测流程建议：主会话 `/plan` 列出文件清单，然后派只读 Subagent 去填风险表，人工确认后，主会话再执行写入。这样 Hooks 的 PreToolUse 仍保护主路径，Subagent 的越界行为不会落盘。
 
 ## 与 MCP、Plan Mode 的配合
 
@@ -57,98 +47,71 @@ Subagent 在独立上下文运行，向主会话返回摘要。适合：
 | Hooks | 强制测试、封禁路径 |
 | Subagents | 并行调研、隔离风险 |
 
-MCP 解决「数据从哪来」，Hooks 解决「什么能执行」，Subagents 解决「谁来做子任务」。缺 Hooks 时，Plan 再漂亮也可能一次 `git push` 翻车。
+MCP 解决「数据从哪来」，Hooks 解决「什么能执行」，Subagents 解决「谁来做子任务」。缺 Hooks 时，Plan 再漂亮也可能一次 `git push` 翻车；缺 Plan 时，Hooks 只能被动拦截，无法预防结构性错误。
 
-## 三条验收标准
+## 三条验收标准与探针脚本
 
-1. **恶意探针**：故意让 Agent 写 `/etc` 或删 `node_modules`，PreToolUse 应拦截并给出明确原因。
-2. **回归探针**：改 `src/foo.ts` 后 PostToolUse 触发单测，失败时会话内出现失败日志。
-3. **子任务探针**：Subagent 只返回摘要，主会话历史里不应塞满子 Agent 全文 dump（否则上下文爆炸）。
+上线 Hooks 前必须跑通三条探针：
 
-## hooks.json 维护建议
+恶意探针。故意让 Agent 写 `/etc/passwd` 或删 `node_modules`，PreToolUse 应拦截并给出明确原因。如果只静默失败，工程师会误以为命令执行成功。
 
-把 Hooks 当代码审查：PR 里改 hooks、说明动机、附测试结果。为 PreToolUse 写单元测试（传入恶意路径，期望拒绝）。HTTP Hook 要有超时，避免 Agent 卡死在外部服务。
+回归探针。改 `src/foo.ts` 后 PostToolUse 触发单测，失败时会话内必须出现失败日志。如果日志没回流，Agent 会以为测试通过，继续下一步错误操作。
 
-## Subagent 成本意识
+子任务探针。Subagent 只返回摘要，主会话历史里不应塞满子 Agent 的全文 dump，否则上下文爆炸。摘要应控制在 500  token 以内，主 Agent 按需读取具体文件。
 
-每个 Subagent 都是一次完整上下文循环。并行三个子任务可能三倍 token。对大仓库，先让 Subagent 输出 **文件路径列表** 而非全文 dump，主 Agent 再按需读取。
+## PreToolUse 配置实例
 
-## PreToolUse 示例思路（伪配置）
+以下是一份 hooks.json 的示意结构，具体字段以官方文档为准：
 
 ```json
 {
-  "event": "PreToolUse",
-  "match": { "tool": "write", "path": "infra/**" },
-  "action": "deny",
-  "message": "生产基础设施禁止 Agent 直写"
+  "hooks": [
+    {
+      "event": "PreToolUse",
+      "match": { "tool": "write", "path": "infra/**" },
+      "action": "deny",
+      "message": "生产基础设施禁止 Agent 直写"
+    },
+    {
+      "event": "PreToolUse",
+      "match": { "tool": "bash", "command": "rm -rf *" },
+      "action": "deny",
+      "message": "危险命令已拦截"
+    },
+    {
+      "event": "PostToolUse",
+      "match": { "tool": "write", "path": "src/**/*.ts" },
+      "action": "run",
+      "command": "npm test -- --testPathPattern='src' --bail"
+    }
+  ]
 }
 ```
 
-上线前用三条恶意路径做回归：删 `node_modules`、写 `/etc`、改 `package-lock` 以外锁文件。
+上线前用三条恶意路径做回归：写 `../outside-repo`、执行 `rm -rf node_modules`、改 `yarn.lock` 以外的锁文件。任何一条没拦住，Hooks 就不该合并到主分支。
 
-## Subagent 任务卡模板
+## Subagent 任务卡与成本意识
 
-```
-目标：只读扫描 legacy/ 依赖风险
-禁止：写任何文件
-输出：Markdown 表（路径|风险|建议）
-```
+派 Subagent 前，给它的任务卡应包含三要素：
 
-主会话只合并表格，不让子 Agent 直接 commit。
+目标：只读扫描 legacy/ 依赖风险。
+禁止：写任何文件、执行 install、commit。
+输出：Markdown 表，列路径、风险等级、建议。
+
+每个 Subagent 都是一次完整上下文循环。并行三个子任务可能三倍 token。对大仓库，先让 Subagent 输出文件路径列表而非全文 dump，主 Agent 再按需读取，能省一半 token。
+
+建议同时运行的 Subagent 不超过两个。第三个任务队列化，等人审完前两个结果再派。主会话合并三个摘要的难度远高于合并两个，超过两个时决策质量会下降。
 
 ## 与 CI 双闸
 
-Hooks 是开发机闸，CI 是最后一闸。两者测试命令必须一致，否则会出现「本地 Hook 过、CI 挂」的扯皮。
+Hooks 是开发机闸，CI 是最后一闸。两者测试命令必须一致，否则会出现「本地 Hook 过、CI 挂」的扯皮。建议把测试命令抽成 `package.json` 里的统一脚本，比如 `npm run test:agent`，Hooks 和 CI 都调用它。
 
-## Hook 测试矩阵
-
-| 用例 | 期望 |
-|------|------|
-| 写 `../outside` | deny |
-| `rm -rf` | deny |
-| `npm test` 失败 | 日志回会话 |
-| 合法写 `src/a.ts` | allow |
-
-每次改 hooks.json 跑矩阵，纳入 CI（可用 dry-run 脚本）。
-
-## Subagent 并行上限
-
-建议同时不超过 2 个子任务，否则主会话合并摘要困难、token 爆炸。队列化第三个任务等人审前两个结果。
-
-## 文档化 Hooks 决策
-
-每个 deny 规则写 ADR 一句话：为何禁止、误报如何申诉。团队规模超过十人时，没有 ADR 的 Hooks 会被新人关掉。
-
-## 实操附录：Hooks 上线 Checklist
-
-- [ ] 恶意路径回归通过  
-- [ ] PostToolUse 测试命令与 CI 一致  
-- [ ] HTTP Hook 超时小于 5 秒  
-- [ ] 文档 ADR 已合并  
-- [ ] on-call 知道如何临时禁用 Hooks  
-
-全部勾选才允许全员开启写权限。缺一项则仅试点两人。
-
-## 读者可执行检查
-
-跑通恶意路径探针一次，把拦截日志贴进 PR。探针失败则 Hooks 不得合并到 main。
-
-## 发布前核对
-
-恶意路径探针日志链接贴在 Hooks PR。探针未跑的合并视为无效合并。
-
-## 会后跟进
-
-Hooks 回归测试纳入 CI nightly，防新人误删规则。
-
-## 版本记录
-
-Hooks nightly 失败即 Slack 告警，指定 owner 当日修复或临时禁用相关规则并记录原因。
-
-## 主题附注 1
-
-请在验收时完成上文自查项，并把日期记在团队 wiki 的「Claude Code Hooks 与 Subagents：给 Agent 加门禁与分工」条目下。
+HTTP Hook 要有超时，建议小于 5 秒。Agent 卡死在外部服务上时，超时会话可恢复，无超时只能杀进程。
 
 ## 局限与不适合谁
 
-Hooks 要你维护脚本与失败处理，小团队若没有 CI 纪律，容易写成「永远误报」而被关掉。Subagents 增加 token 与时间成本，简单单文件 bugfix 用主会话更快。2026 年起 Agent SDK 订阅可能有独立额度（见 Anthropic 公告），预算紧的团队要先算清。若你只在 IDE 里偶尔补全、不让 Agent 跑 shell，Hooks/Subagent 体系可跳过，用 Cursor Tab 补全即可。配置细节始终以 [code.claude.com/docs](https://code.claude.com/docs) 为准。
+Hooks 需要你维护脚本与失败处理，小团队若没有 CI 纪律，容易写成「永远误报」而被关掉。PreToolUse 规则太松等于没设，太紧会频繁打断正常操作，平衡点需要按仓库调整。
+
+Subagents 增加 token 与时间成本，简单单文件 bugfix 用主会话更快。2026 年起 Agent SDK 订阅可能有独立额度，预算紧的团队要先算清用量。
+
+若你只在 IDE 里偶尔补全、不让 Agent 跑 shell，Hooks 和 Subagent 体系可跳过，用 Cursor Tab 补全即可。配置细节始终以 code.claude.com/docs 为准，本文的 hooks.json 仅为示意，事件名和字段可能随版本变更。
