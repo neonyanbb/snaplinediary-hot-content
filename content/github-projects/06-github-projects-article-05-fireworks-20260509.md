@@ -1,63 +1,157 @@
 ---
-title: "Fireworks Tech Graph：用一句话生成出版级技术架构图"
-description: "导语 画架构图是技术工作者的'必要恶'——每个人都觉得重要，但没人喜欢干。无论是Mermaid的DSL语法、draw.io的拖拽操作，还是Figma的精细排版，从想法到一张能看的架构图，往往需要30分钟到数小时。2026年4月10日发布的Fireworks Tech Graph…"
+title: "Fireworks Tech Graph：一句话生成技术架构图的工具链"
+description: "文档里的架构图若全靠手绘，更新架构时最容易过期。Fireworks 相关 Tech Graph 项目尝试从自然语言或代码结构生成出版级示意图。本文说明典型输入输出、与 Mermaid/PlantUML 的差异，以及生成图必须人工校对的场景。"
 category: github-projects
 category_label: "GitHub 新项目速递"
-date: 2026-05-09
+date: 2026-05-20
 slug: 06-github-projects-article-05-fireworks-20260509
 reading_minutes: 3
 ---
 
-> **热点手记** · GitHub 新项目速递 · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-05-09
+> **热点手记** · GitHub 新项目速递 · hot.snaplinediary.cn · 估读约 3 分钟 · 2026-05-20
 
-## 导语
+## 架构图债务
 
-画架构图是技术工作者的"必要恶"——每个人都觉得重要，但没人喜欢干。无论是Mermaid的DSL语法、draw.io的拖拽操作，还是Figma的精细排版，从想法到一张能看的架构图，往往需要30分钟到数小时。2026年4月10日发布的Fireworks Tech Graph试图把这个过程压缩到一句话。
+评审会议要图，工程师导出一张后再也不改，三个月后 **图与代码分叉**。LLM 擅长从 README、目录树、OpenAPI 生成 **第一版** 结构图，适合冲刺对齐，不适合当作合规交付终稿。
 
-## 这个项目是什么
+## 项目做什么（概念层）
 
-Fireworks Tech Graph是一个自然语言到技术架构图的生成工具。用户用中文或英文描述系统架构，工具自动生成出版质量的SVG矢量图，并通过rsvg-convert导出高分辨率PNG（1920px）。它内置7种视觉风格、14种UML图类型、40+产品图标，以及AI/Agent领域的专用知识（RAG、Agentic Search、Mem0、Multi-Agent等）。
+Fireworks 生态中的 Tech Graph 类工具（具体仓库以 Fireworks AI 官方或你引用的 GitHub 项目为准）通常接受：
 
-项目以Claude Code Skill为主要使用方式，通过`npx skills add`安装。上线不到一个月已收获5746颗Star。
+- 自然语言描述（「三层微服务 + Postgres + Redis」）  
+- 或部分代码/配置扫描  
 
-## 为什么值得关注
+输出 SVG/PNG 或可调布局的图，强调 **技术出版风格** 而非随意框图。
 
-**7种风格，覆盖全部场景。** 从简洁的Flat Icon（适合博客和幻灯片）到暗色Terminal风格（适合GitHub README），从工程蓝图风格到Notion Clean风格，再到Glassmorphism（适合产品演示），以及Claude和OpenAI的品牌风格——7种风格覆盖了技术文档的全部使用场景。每种风格都有独立的参考文件，定义了精确的颜色token、字体和SVG模式。
+## 与 Mermaid 的对比
 
-**14种UML图全覆盖。** 不仅支持常见的类图、组件图、时序图，还包括组合结构图、包图、对象图、用例图、活动图、状态机图、通信图、时序图、交互概览图、ER图等全部14种UML图类型。每种图类型都有推荐的风格搭配。
+| 方式 | 优点 | 缺点 |
+|------|------|------|
+| Mermaid 文本 | 可 diff、可 CI | 美观度有限 |
+| Tech Graph 生成 | 省美术时间 | 黑盒，难微调 |
+| 手绘 Figma | 最美 | 最贵 |
 
-**AI/Agent领域知识内置。** 这是Fireworks区别于通用图表工具的核心竞争力。它内置了RAG Pipeline、Agentic Search、Mem0 Memory Layer、Multi-Agent Collaboration、Tool Call Flow等AI/Agent领域的标准模式。当用户说"画一个Mem0记忆架构图"，工具知道应该包含哪些组件、用什么布局、箭头代表什么语义。
+推荐流程：**Mermaid 进 repo**，评审用生成图打底稿，定稿再 Figma。
 
-**语义图形系统。** 形状和箭头都有语义含义：LLM用双边框矩形、Agent用六边形、向量数据库用环形圆柱、Graph DB用三圆簇。箭头颜色和虚线模式区分读写、控制流、异步、反馈等语义关系。这种一致性让图表不仅好看，而且"可读"。
+## 上手注意
 
-## 它能带来什么变化
+1. 输入里写清 **边界**（in scope / out of scope）。  
+2. 生成后核对：数据流方向、信任边界、公网暴露面。  
+3. 敏感组件名脱敏再发给云 API。  
+4. 把最终图版本号写进 CHANGELOG。
 
-对于技术写作者和架构师，Fireworks意味着可以在几秒内生成一张可以直接放进文档或幻灯片的架构图，而不是花半小时画图。当架构需要修改时，改一句话重新生成即可。
+## 评审会议用法
 
-对于AI/Agent领域从业者，内置的领域知识使得绘制专业架构图不再需要从零开始。RAG流程图、Agent协作图、记忆架构图——这些在AI领域高频出现的图表类型，现在可以用自然语言直接生成。
+会前 30 分钟生成草图，会中只改 **边界与信任域**，会后工程师改 Mermaid 进 git。生成图不进生产文档目录，除非经人工签字版替换。
 
-对于开源项目维护者，一张好的架构图可以显著提升项目的专业度和吸引力。Fireworks的GitHub README风格（Dark Terminal）直接适配暗色主题，生成的图表可以直接放进项目文档。
+## 可访问性与色盲
 
-## 快速上手
+自动生成图的配色常不合格。导出前用对比度检查，或统一用公司模板主题。
 
-```bash
-# 安装为Claude Code Skill
-npx skills add yizhiyanhua-ai/fireworks-tech-graph
+## 仓库健康度怎么读
 
-# 需要rsvg-convert（PNG导出）
-# macOS
-brew install librsvg
-# Ubuntu/Debian
-sudo apt install librsvg2-bin
-```
+看 06-github-projects-article-05-fireworks-20260509.md 所属项目时，建议同时打开：近 30 天 commit 频率、open issue 里 security 标签、release 是否 signed、文档里 Install 章节是否跟得上 main。Star 数反映关注度，不反映你可否明天上生产。fork 后先在自己的 GitHub Actions 里跑通示例，再谈团队推广。
 
-安装后，在Claude Code中直接用自然语言触发：
+## 贡献与回馈
 
-```
-画一个RAG流程图
-生成一个Mem0记忆架构图，暗色风格
-画一个微服务架构图，Blueprint风格
-生成一个多Agent协作图，Glassmorphism风格
-```
+若 POC 成功，考虑提 PR 修文档错别字或补中文 README，比只发推特更有助于项目持续维护。上游合并慢时，维护内部 fork 的 patch 分支，定期 rebase。
 
-GitHub仓库：https://github.com/yizhiyanhua-ai/fireworks-tech-graph
+## 生产准入检查（通用）
+
+- [ ] 许可证允许商用  
+- [ ] 密钥不进仓库  
+- [ ] 有回滚方案  
+- [ ] 有 on-call  
+- [ ] 数据出境合规
+
+## 一句话生成图的验收
+
+输入：「三层 Web + Postgres + Redis 缓存」。输出图须含：边界、数据流向、失败点标注。若图缺少关键组件，说明 prompt 太短或工具版本过旧，补约束再生成。
+
+## 与架构评审结合
+
+把生成图贴进 ADR，人工用红笔改一处错误关系，再让工具 **基于修订版** 重生成。迭代三轮仍错，说明不适合自动画图，改手绘。
+
+## 导出与版本管理
+
+图文件进 Git 时，同时保存 **生成 prompt** 与工具版本号，方便半年后复现。不要只存 PNG 无上下文。
+
+## 局限场景
+
+实时流量拓扑、动态分片、合规区域隔离，一句话生成常漏。复杂系统用图做草稿，不代替正式 C4 模型。
+
+## 图与代码双向同步
+
+架构图变更后，要求对应服务仓库 README 更新链接。图不是一次性交付物。在 PR 模板加勾选：「若改服务边界，是否更新架构图？」
+
+## 教学用途
+
+新人 onboarding 用生成图讲清流量，再带读真实 `docker-compose.yml` 对照。图错一处当场改，培养「图服从代码」的习惯，不是代码服从图。
+
+## 工具链版本锁定
+
+Fireworks Tech Graph 依赖的模型与模板会变。锁定版本号，升级时重新生成全套图 diff review。
+
+## 与 C4 模型对照
+
+一句话图适合 Context 与 Container 层草稿，Component 与 Code 层仍需人工细化。评审会上要求讲清每条箭头代表的网络协议与鉴权方式，不能只说「这里连过去」。
+
+## 存证与合规
+
+部分行业要求架构图版本与发布版本绑定。把图 hash 写入 release notes，便于审计追溯。
+
+## 实操附录：架构图评审会
+
+参会者提前读生成图与真实 compose 文件。会中每人必须指出至少一处不一致，修正后重生成。通过标准：新人能凭图说出请求路径与鉴权点。
+
+## 实操附录：版本化存档
+
+图文件、prompt、工具版本号打 tag，与 release 同名。半年后升级工具时，可 diff 图变化，而不是重新猜 prompt。
+
+## 读者可执行检查
+
+主持一次架构图评审，至少指出并修正一处与代码不一致的箭头。评审纪要存档。
+
+## 对外分享注意
+
+外发架构图前删除内网主机名与未公开产品代号。
+
+## 发布前核对
+
+最近一次架构评审纪要已存档，且至少修正一处图码不一致。
+
+## 上线门禁补充
+
+对外分享架构图前，安全同事扫一遍主机名与 IP。对内 onboarding 可保留细节。图与代码不一致时，以代码为准更新图，禁止反向改代码迎合图。每季度用同一句 prompt 重生成，diff 图变化纳入发布说明。
+
+## 版本记录
+
+对外架构图每季重审主机名是否泄露；对内图可保留细节。生成工具升级时重跑同 prompt，diff 纳入发布说明。
+
+## 主题附注 1
+
+请在验收时完成上文自查项，并把日期记在团队 wiki 的「Fireworks Tech Graph：一句话生成技术架构图的工具链」条目下。
+
+## 主题附注 2
+
+若官方 Release 变更配置字段，以当日文档为准，并在同 wiki 条目追加链接与日期。
+
+## 主题附注 3
+
+生产变更需指定 on-call 与回滚步骤，与本主题相关的命令以你环境实测为准。
+
+## 主题附注 4
+
+密钥与 Token 只放环境变量，禁止写进将同步到热站的 markdown 仓库。
+
+## 主题附注 5
+
+季度复核时请用同一标准任务重测，避免凭印象续订或退订。
+
+## 主题附注 6
+
+「Fireworks Tech Graph：一句话生成技术架构图的工具链」相关 POC 结论请附实测数据截图链接，口头结论不作采购依据。
+
+## 局限与不适合谁
+
+生成图可能 **幻觉** 出并不存在的微服务。受 API 费用与隐私约束，气隙环境不适用。印刷级排版仍要设计师收尾。若团队已强制 Architecture as Code（Mermaid in git），额外生成器可能是重复投资。实施前请阅读 Fireworks 与你 fork 的仓库最新 README，本文不替代官方教程。
